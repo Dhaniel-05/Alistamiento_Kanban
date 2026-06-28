@@ -1,0 +1,124 @@
+/* src/pages/planeacion/components/NuevaPlaneacionForm.css */
+
+/* ... (todo el CSS existente se mantiene igual) ... */
+
+/* ESTILOS PARA VISTA DE SOLO LECTURA - AGREGADOS AL FINAL */
+.vista-solo-lectura .campo-solo-lectura {
+    padding: 12px 14px;
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    color: #555;
+    font-size: 0.85rem;
+    margin: 0;
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+}
+
+.vista-solo-lectura .texto-largo {
+    min-height: 80px;
+    align-items: flex-start;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+.vista-solo-lectura .estado-vista .badge-vista {
+    background: #6c757d;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.vista-solo-lectura .estado-completo {
+    background: #28a745;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.vista-solo-lectura .estado-expandido {
+    background: #17a2b8;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+/* Deshabilitar interacciones en vista de solo lectura */
+.vista-solo-lectura .btn-agregar-rap,
+.vista-solo-lectura .btn-eliminar-rap,
+.vista-solo-lectura .btn-toggle-acordeon,
+.vista-solo-lectura .btn-guardar {
+    display: none !important;
+}
+
+.vista-solo-lectura .agregar-rap-container {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.vista-solo-lectura .rap-form-header {
+    cursor: default !important;
+    background: #f8f9fa !important;
+}
+
+.vista-solo-lectura .rap-form-header:hover {
+    background: #f8f9fa !important;
+}
+
+.vista-solo-lectura .campo-select-block,
+.vista-solo-lectura .dato-input,
+.vista-solo-lectura .dato-select,
+.vista-solo-lectura .campo-textarea,
+.vista-solo-lectura .campo-input-small,
+.vista-solo-lectura .campo-select-full {
+    background: #f8f9fa !important;
+    border-color: #e0e0e0 !important;
+    color: #555 !important;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
+/* Asegurar que todos los acordeones estén expandidos */
+.vista-solo-lectura .rap-form-section {
+    border-color: #e0e0e0 !important;
+}
+
+.vista-solo-lectura .rap-form-section .rap-form-content {
+    display: block !important;
+}
+
+/* Estilos para campos de solo lectura en la configuración */
+.vista-solo-lectura .configuracion-grid .campo-grupo:last-child {
+    opacity: 0.7;
+}
+
+/* Responsive para vista de solo lectura */
+@media (max-width: 768px) {
+    .vista-solo-lectura .main-header {
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .vista-solo-lectura .estado-vista {
+        width: 100%;
+        text-align: center;
+        margin-top: 8px;
+    }
+
+    .vista-solo-lectura .campo-solo-lectura {
+        font-size: 0.8rem;
+        padding: 10px 12px;
+    }
+}

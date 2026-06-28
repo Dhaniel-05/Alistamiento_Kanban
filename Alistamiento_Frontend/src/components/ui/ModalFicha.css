@@ -1,0 +1,322 @@
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  /* ← IMPORTANTE para móviles */
+  z-index: 1000;
+}
+
+.modal-box {
+  background: #fff;
+  width: 100%;
+  /* ← ANCHO RESPONSIVE */
+  max-width: 520px;
+  /* ← Tamaño máximo original */
+  padding: 28px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.30);
+  animation: fadeIn 0.2s ease;
+
+  max-height: 95vh;
+  /* ← evita que se salga */
+  overflow-y: auto;
+  /* ← scroll interno si es necesario */
+    z-index: 1001; /* Añade esto */
+}
+
+/* TITULOS */
+.modal-title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.modal-subtitle {
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 18px;
+}
+
+/* GRID 2 COLUMNAS EN PC — 1 COLUMNA EN CELULAR */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 600px) {
+  .grid-2 {
+    grid-template-columns: 1fr;
+    /* ← móvil */
+  }
+}
+
+/* FORMULARIO */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid #d0d0d0;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: #007bff;
+}
+
+/* SELECT PERSONALIZADO */
+.select-box {
+  position: relative;
+}
+
+.select-box select {
+  appearance: none;
+  width: 100%;
+  background: white;
+  cursor: pointer;
+}
+
+.select-box .icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #777;
+}
+
+/* SECCIONES */
+.section-title {
+  margin-top: 18px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.section-text {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 10px;
+}
+
+/* INSTRUCTORES */
+.add-instructor-box {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.add-instructor-box input {
+  flex: 1;
+}
+
+.add-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 9px 12px;
+  background: #f3f3f3;
+  border: 1px solid #007bff;
+  color: #007bff;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.add-btn:hover {
+  background: #007bff;
+  color: white;
+}
+
+.instructor-list {
+  margin-top: 10px;
+  padding-left: 18px;
+  font-size: 14px;
+  color: #333;
+}
+
+/* BOTONES */
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.cancel-btn,
+.create-btn {
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.cancel-btn {
+  background: #e4e4e4;
+}
+
+.cancel-btn:hover {
+  background: #d3d3d3;
+}
+
+.create-btn {
+  background: #000;
+  color: white;
+}
+
+.create-btn:hover {
+  background: #222;
+}
+
+.delete-inst-btn {
+  margin-left: 10px;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.delete-inst-btn:hover {
+  background-color: #b52a37;
+}
+
+
+/* ANIMACIÓN */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.disabled-input {
+  background-color: #f5f5f5 !important;
+  cursor: not-allowed !important;
+  opacity: 0.7;
+  border-color: #ddd !important;
+}
+
+.disabled-input:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: #ddd !important;
+}
+
+.disabled-note {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #666;
+  font-style: italic;
+}
+/* En ModalFicha.css */
+.error-input {
+  border-color: #dc3545 !important;
+  background-color: #fff8f8 !important;
+}
+
+.error-input:focus {
+  border-color: #dc3545 !important;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+}
+
+.error-message {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #dc3545;
+  font-weight: 500;
+}
+.modal-error-overlay,
+.modal-exito-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7); /* Más oscuro para destacar */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000; /* Mucho más alto que el modal principal */
+  padding: 16px;
+}
+
+.modal-error-content,
+.modal-exito-content {
+  background: #fff;
+  width: 100%;
+  max-width: 400px;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  animation: fadeIn 0.2s ease;
+}
+
+.modal-error-title {
+  color: #dc3545;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.modal-exito-title {
+  color: #28a745;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.modal-error-buttons,
+.modal-exito-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.btn-cerrar-error {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-cerrar-exito {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-cerrar-error:hover {
+  background: #c82333;
+}
+
+.btn-cerrar-exito:hover {
+  background: #218838;
+}

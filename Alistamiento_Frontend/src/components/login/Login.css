@@ -1,0 +1,138 @@
+/* Fondo general */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f5f6fa; /* Fondo claro */
+  color: #333;
+  font-family: "Poppins", sans-serif;
+}
+
+/* Tarjeta central */
+.login-card {
+  background-color: #fff; /* Tarjeta blanca */
+  padding: 2.5rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Sombra suave */
+  width: 380px;
+  text-align: center;
+}
+
+/* Logo */
+.login-logo {
+  width: 120px;
+  margin-bottom: 1.2rem;
+}
+
+/* Títulos */
+h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #1a1a1a;
+}
+
+.login-subtitle {
+  color: #555;
+  font-size: 0.9rem;
+  margin-bottom: 1.8rem;
+}
+
+/* Campos de formulario */
+.form-group {
+  text-align: left;
+  margin-bottom: 1.2rem;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  display: block;
+  margin-bottom: 0.4rem;
+  color: #444;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.7rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #fff;
+  color: #333;
+  font-size: 0.9rem;
+  box-sizing: border-box;
+}
+
+.form-group input:focus {
+  border-color: #2e7dff; /* Azul suave al foco */
+  outline: none;
+}
+
+/* Campo de contraseña con ícono */
+.password-field {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding-right: 0.5rem;
+  background-color: #fff;
+}
+
+.password-field input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 0.7rem;
+  color: #333;
+}
+
+.password-field input:focus {
+  outline: none;
+}
+
+.toggle-password {
+  cursor: pointer;
+  padding: 0 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+  color: #666;
+}
+
+.toggle-password:hover svg {
+  color: #000;
+}
+
+/* Botón */
+.login-btn {
+  width: 100%;
+  padding: 0.8rem;
+  background-color: #000; /* Botón oscuro */
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  transition: background-color 0.3s;
+}
+
+.login-btn:hover {
+  background-color: #222;
+}
+
+/* Enlace "Volver" */
+.back-link {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #333;
+  text-decoration: none;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  cursor: pointer;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}

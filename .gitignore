@@ -1,78 +1,91 @@
-# Dependencies
+# ===== Dependencias =====
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
 
-# Build outputs
+# Lockfiles: descomenta UNO si decides NO versionarlos.
+# Recomendación: versiónalos (no los ignores) para builds reproducibles.
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# ===== Variables de entorno (CRÍTICO) =====
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# ===== Python (backend usa pdfplumber) =====
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# ===== Build / outputs =====
 dist/
+dist-ssr/
 build/
+.vite/
 *.local
+*.tsbuildinfo
 
-# Environment variables
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# ===== Uploads (PDFs temporales, se procesan y borran) =====
+# Ignora el contenido pero conserva la carpeta vía .gitkeep
+**/uploads/*
+!**/uploads/.gitkeep
 
-# IDE and editors
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.DS_Store
-*.sublime-project
-*.sublime-workspace
-
-# Logs
+# ===== Logs =====
 logs/
 *.log
 
-# OS files
-Thumbs.db
+# ===== Testing / cobertura =====
+coverage/
+.nyc_output/
+*.test.js.snap
+
+# ===== IDE / editores =====
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*.swn
+*.bak
+*.sublime-project
+*.sublime-workspace
+
+# ===== OS =====
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
 
-# Testing
-coverage/
-.nyc_output/
-*.test.js.snap
-
-# Temporary files
+# ===== Caché / temporales =====
+.cache/
 *.tmp
 *.temp
-.cache/
+*.pid
+*.pid.lock
+*.seed
 
-# Vite
-.vite/
-
-# TypeScript
-*.tsbuildinfo
-
-# Database
+# ===== Bases de datos locales =====
 *.sqlite
 *.sqlite3
 *.db
 
-# Uploads (si hay archivos subidos por usuarios)
-uploads/
-temp/
+# ===== Certificados TLS (producción, no versionar) =====
+certs/
+*.pem
+*.key
+*.crt
 
-# Backend specific
-Backend/uploads/
-Backend/temp/
-
-# Frontend specific
-Frontend/dist/
-Frontend/.vite/
-Frontend/build/
+# eliminar la carpeta de cursor IA si no se utiliza
+.cursor\rules\seniorfullstack.mdc

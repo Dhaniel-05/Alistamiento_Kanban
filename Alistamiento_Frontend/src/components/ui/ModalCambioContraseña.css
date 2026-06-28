@@ -1,0 +1,160 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.modal-overlay[style*="z-index: 9999"] {
+    z-index: 9999; /* Para modales de éxito/error encima */
+}
+
+.modal-card {
+  background: #fff;
+  padding: 2.5rem;
+  border-radius: 40px;
+  width: 400px;
+  height: 550px; 
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  text-align: center;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.modal-logo {
+  margin-bottom: 1.rem; /* Reducido para mejor espaciado */
+}
+
+.logo-image {
+  max-height: 100px; /* Aumentado significativamente de 120px */
+  max-width: 250px;  /* Aumentado significativamente de 250px */
+  /* width: auto;
+  height: auto; */
+}
+
+.modal-icon-container {
+  background: #f0f0f0;
+  width: 50px;       /* Reducido más de 60px a 50px */
+  height: 50px;      /* Reducido más de 60px a 50px */
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0.5rem auto 1.2rem; /* Ajustado margen superior */
+  border: 1px solid #e0e0e0;
+}
+
+.modal-icon {
+  color: #333;
+  font-size: 1.2rem; /* Reducido más de 1.5rem a 1.2rem */
+}
+
+.modal-title {
+  color: #1a1a1a;
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 0.8rem;
+}
+
+.modal-subtitle {
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 1.8rem;
+  line-height: 1.4;
+}
+
+.input-container {
+  margin-bottom: 1.2rem;
+  text-align: left;
+}
+
+.input-label {
+  display: block;
+  color: #333;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.modal-input {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #d0d0d0;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  background-color: #fff;
+  letter-spacing: 0.2em;
+}
+
+.modal-input::placeholder {
+  letter-spacing: normal;
+  color: #aaa;
+}
+
+.modal-input:focus {
+  outline: none;
+  border-color: #888;
+  box-shadow: 0 0 0 2px rgba(136, 136, 136, 0.1);
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 0;
+  font-size: 1rem;
+  transition: color 0.2s;
+}
+
+.password-toggle:hover {
+  color: #333;
+}
+
+.password-requirement {
+  color: #888;
+  font-size: 0.8rem;
+  margin: 0.5rem 0 1.8rem;
+  text-align: left;
+}
+
+.modal-btn {
+  width: 100%;
+  padding: 0.9rem;
+  background: #1a1a1a;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal-btn:hover:not(:disabled) {
+  background: #333;
+}
+
+.modal-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.modal-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}

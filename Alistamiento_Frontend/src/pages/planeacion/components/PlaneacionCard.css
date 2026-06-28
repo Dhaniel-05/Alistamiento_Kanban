@@ -1,0 +1,137 @@
+/* src/pages/planeacion/components/PlaneacionCard.css */
+.planeacion-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  width: 100%;
+}
+
+.planeacion-encabezado {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.planeacion-codigo {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.planeacion-estado {
+  padding: 4px 12px;
+  background: #000;
+  color: white;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.planeacion-descripcion {
+  color: #555;
+  margin: 0 0 16px 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.planeacion-metadata {
+  display: flex;
+  gap: 24px;
+  color: #666;
+  font-size: 0.875rem;
+  margin-bottom: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.planeacion-metadata span {
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.planeacion-acciones {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-accion {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  color: #333;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.btn-accion:hover {
+  background: #f8f9fa;
+}
+
+.btn-ver:hover {
+  border-color: #2196f3;
+  color: #2196f3;
+}
+
+.btn-editar:hover {
+  border-color: #ff9800;
+  color: #ff9800;
+}
+
+.btn-guia:hover {
+  border-color: #4caf50;
+  color: #4caf50;
+}
+
+.btn-eliminar {
+  color: #d32f2f;
+}
+
+.btn-eliminar:hover {
+  border-color: #d32f2f;
+  background: #ffebee;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .planeacion-encabezado {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .planeacion-acciones {
+    flex-wrap: wrap;
+  }
+
+  .btn-accion {
+    flex: 1;
+    min-width: 120px;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .planeacion-metadata {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .planeacion-acciones {
+    flex-direction: column;
+  }
+
+  .btn-accion {
+    width: 100%;
+  }
+}

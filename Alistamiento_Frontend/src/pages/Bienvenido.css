@@ -1,0 +1,42 @@
+
+/* Tarjeta de bienvenida (similar al diseño del Gestor Académico) */
+/* .bienvenido-card {
+  width: 100%;
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 28px 32px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e5e7eb;
+  margin-bottom: 40px;
+}
+
+/* Encabezado: "Bienvenido/a, usuario" */
+/* .bienvenido-saludo {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 12px;
+}
+
+/* Subtítulo: descripción o rol */
+/* .bienvenido-rol {
+  font-size: 1rem;
+  color: #475569;
+  margin-top: 6px;
+}
+
+/* Botón de cerrar sesión */
+/* .btn-cerrar-sesion {
+  padding: 10px 20px;
+  background-color: #334155;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  margin-top: 20px;
+}
+
+.btn-cerrar-sesion:hover {
+  background-color: #475569;
+}

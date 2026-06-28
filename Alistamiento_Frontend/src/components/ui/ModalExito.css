@@ -1,0 +1,67 @@
+.modal-fondo-exito {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+.modal-contenedor-exito {
+  background-color: #fff;
+  padding: 2rem;
+  border-radius: 0.75rem;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+.modal-icono-exito {
+  color: #10b981; /* Verde éxito */
+  margin-bottom: 1rem;
+}
+
+.modal-icono-exito svg {
+  width: 48px;
+  height: 48px;
+}
+
+.modal-titulo-exito {
+  font-size: 1.3rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+  color: #065f46; /* Verde oscuro */
+}
+
+.modal-mensaje-exito {
+  color: #374151;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.modal-acciones-exito {
+  display: flex;
+  justify-content: center;
+}
+
+.modal-boton-exito {
+  padding: 0.6rem 1.5rem;
+  background-color: #10b981; /* Verde éxito */
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+.modal-boton-exito:hover {
+  background-color: #059669;
+}
+
+.modal-boton-exito:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+}

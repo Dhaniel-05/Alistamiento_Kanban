@@ -1,0 +1,468 @@
+/* 🔹 Contenedor general */
+.usuarios-container {
+  background-color: #f9fafb;
+  min-height: 100vh;
+  padding: 2rem;
+  font-family: "Inter", sans-serif;
+}
+
+/* 🔹 Barra superior (menú + botón) */
+.menu-superior {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* 🔹 Menú de secciones */
+.menu-secciones {
+  display: flex;
+  gap: 2rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.menu-secciones span {
+  cursor: pointer;
+  transition: color 0.2s, border-bottom 0.2s;
+}
+
+.menu-secciones span:hover {
+  color: #111827;
+}
+
+.menu-secciones .activo {
+  color: #111827;
+  border-bottom: 2px solid #111827;
+  padding-bottom: 4px;
+}
+
+/* 🔹 Botón "Crear Usuario" */
+/* 🔹 Contenedor del header con botón a la derecha */
+.usuarios-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+/* 🔹 Botón “Crear Instructor” al estilo profesional */
+.btn-crear {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #111827;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1.2rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  font-size: 0.95rem;
+}
+
+.btn-crear i {
+  font-size: 1rem;
+  transition: transform 0.2s ease;
+}
+
+/* 🔹 Efecto hover */
+.btn-crear:hover {
+  background-color: #1f2937;
+  transform: translateY(-1px);
+}
+
+.btn-crear:hover i {
+  transform: scale(1.15);
+}
+
+
+/* 🔹 Encabezado principal */
+.usuarios-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.titulo-seccion {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.5rem;
+}
+
+.subtitulo {
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+/* 🔹 Estado vacío (cuando no hay usuarios) */
+.usuarios-lista-vacia {
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 3rem;
+  text-align: center;
+}
+
+.usuarios-lista-vacia p {
+  color: #6b7280;
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* 🔹 Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+  animation: fadeIn 0.3s ease;
+}
+
+.modal-contenido {
+  background: #fff;
+  border-radius: 12px;
+  padding: 2rem;
+  width: 400px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  animation: slideUp 0.3s ease;
+}
+
+.modal-contenido h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.5rem;
+}
+
+.descripcion-modal {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+/* 🔹 Inputs del modal */
+.form-modal label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: block;
+  margin-top: 1rem;
+  margin-bottom: 0.3rem;
+}
+
+.form-modal input {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.6rem;
+  background-color: #f9fafb;
+  outline: none;
+}
+
+.form-modal input:focus {
+  border-color: #111827;
+}
+
+/* 🔹 Botones del modal */
+.acciones-modal {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+  gap: 1rem;
+}
+
+.btn-cancelar {
+  background: #e2e8f0;
+  border: none;
+  color: #111827;
+  border-radius: 8px;
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+}
+
+.btn-crear-usuario {
+  background: #111827;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1.2rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+/* 🔹 Animaciones */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+ .usuario-card {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 15px;
+  margin-bottom: 10px;
+}
+
+.usuario-card h4 {
+  margin: 0;
+  color: #333;
+}
+
+.usuario-card p {
+  margin: 5px 0;
+  color: #555;
+  font-size: 14px;
+}
+
+.usuario-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  padding: 20px;
+  margin: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: transform 0.2s ease;
+}
+
+.usuario-card:hover {
+  transform: scale(1.02);
+}
+
+.usuario-info {
+  flex: 1;
+}
+
+.acciones-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-left: 10px;
+}
+
+/* 🔹 Botones base */
+.btn-editar,
+.btn-eliminar {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: all 0.25s ease;
+  color: #6b7280; /* gris inicial */
+}
+
+/* 🔹 Hover */
+.btn-editar:hover {
+  color: #2563eb; /* azul profesional */
+  transform: scale(1.2);
+}
+
+.btn-eliminar:hover {
+  color: #dc2626; /* rojo moderno */
+  transform: scale(1.2);
+}
+
+/* 🔹 Íconos Font Awesome */
+.btn-editar i,
+.btn-eliminar i {
+  pointer-events: none;
+}
+
+/* 🔹 Nueva barra animada de secciones */
+.menu-secciones-animadas {
+  display: flex;
+  justify-content: center;
+  background-color: #f3f4f6;
+  border-radius: 9999px;
+  padding: 0.25rem; /* 🔸 más delgado */
+  margin-bottom: 2rem;
+  gap: 0.4rem;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.menu-secciones-animadas .tab {
+  flex: 1;
+  text-align: center;
+  background: transparent;
+  border-radius: 9999px;
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  color: #6b7280;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.menu-secciones-animadas .tab i {
+  font-size: 1rem;
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+/* 🔹 Tab activa */
+.menu-secciones-animadas .tab.activo {
+  background-color: #ffffff;
+  color: #111827;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.menu-secciones-animadas .tab.activo i {
+  color: #111827;
+  transform: scale(1.2);
+}
+
+/* 🔹 Hover suave */
+.menu-secciones-animadas .tab:hover {
+  color: #111827;
+  background-color: #e5e7eb;
+}
+
+.menu-secciones-animadas .tab:hover i {
+  transform: scale(1.1);
+}
+
+/* 🔹 Animación de cambio */
+@keyframes tabActivate {
+  from {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.menu-secciones-animadas .tab.activo {
+  animation: tabActivate 0.25s ease;
+}
+
+/* Agrega esto a tu Pagina.css */
+
+/* Mensajes de error */
+.mensaje-error {
+  background-color: #fee;
+  border: 1px solid #f99;
+  border-radius: 4px;
+  padding: 12px;
+  margin: 16px 0;
+  color: #c00;
+}
+
+/* Botón secundario */
+.pagina-boton-secundario {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-left: 10px;
+}
+
+.pagina-boton-secundario:hover:not(:disabled) {
+  background-color: #5a6268;
+}
+
+.pagina-boton-secundario:disabled {
+  background-color: #a0a0a0;
+  cursor: not-allowed;
+}
+
+/* Botones de acción */
+.boton-editar {
+  background-color: #17a2b8;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  margin-right: 8px;
+}
+
+.boton-editar:hover:not(:disabled) {
+  background-color: #138496;
+}
+
+.boton-eliminar {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.boton-eliminar:hover:not(:disabled) {
+  background-color: #c82333;
+}
+
+.boton-editar:disabled,
+.boton-eliminar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Advertencia en modal */
+.advertencia-importante {
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 4px;
+  padding: 12px;
+  margin: 12px 0;
+}
+
+.advertencia-importante p {
+  margin: 8px 0;
+}
+
+.advertencia-importante ul {
+  margin: 8px 0 8px 20px;
+  padding: 0;
+}
+
+.advertencia-importante li {
+  font-size: 14px;
+  color: #856404;
+  margin-bottom: 4px;
+}
+
+.texto-rojo {
+  color: #dc3545 !important;
+  font-weight: bold;
+}
+
+.texto-advertencia {
+  color: #6c757d;
+  font-style: italic;
+  margin-top: 10px;
+}

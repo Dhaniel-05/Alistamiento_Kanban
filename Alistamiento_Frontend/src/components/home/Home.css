@@ -1,0 +1,92 @@
+/* Fondo general */
+.home-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f9fafb; /* tono exacto del fondo */
+  font-family: "Inter", "Poppins", sans-serif;
+}
+
+/* Tarjeta principal */
+.home-card {
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  text-align: center;
+  padding: 10px 60px;
+  width: 350px;
+  transition: all 0.3s ease;
+}
+
+/* Logo */
+.home-logo {
+  width: 240px;
+  margin-bottom: 25px;
+}
+
+/* Título */
+.home-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #0a0a0a;
+  margin-bottom: 15px;
+}
+
+/* Subtítulo */
+.home-subtitle {
+  font-size: 15px;
+  color: #444;
+  line-height: 1.6;
+  margin-bottom: 40px;
+}
+
+/* Botón principal */
+.home-button {
+  background-color: #030314;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  width: 100%;
+  padding: 12px 0;
+  cursor: pointer;
+  transition: background-color 0.25s ease, transform 0.2s ease;
+}
+
+.home-button:hover {
+  background-color: #0a0a2a;
+  transform: translateY(-1px);
+}
+
+/* Texto informativo */
+.home-text {
+  margin-top: 18px;
+  font-size: 13px;
+  color: #5c5c5c;
+}
+
+/* Footer */
+.home-footer {
+  margin-top: 45px;
+  font-size: 12px;
+  color: #9b9b9b;
+  text-align: center;
+}
+
+/* Sutil animación de entrada */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.home-card {
+  animation: fadeIn 0.6s ease forwards;
+}

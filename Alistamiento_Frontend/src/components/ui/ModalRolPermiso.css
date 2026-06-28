@@ -1,0 +1,109 @@
+.modal-fondo {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-contenedor {
+    background-color: #fff;
+    padding: 2rem;
+    border-radius: 0.75rem;
+    width: 90%;
+    max-width: 30rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);
+}
+
+.modal-titulo {
+    font-size: 1.3rem;
+    font-weight: bold;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    color: #222;
+}
+
+.modal-formulario {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.modal-select {
+    padding: 0.75rem;
+    border: 1px solid #ccc;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    width: 100%;
+}
+
+.modal-seccion {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.modal-etiqueta {
+    font-size: 0.95rem;
+}
+
+.modal-lista-permisos {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.modal-item-permiso {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.modal-checkbox {
+    transform: scale(1.2);
+    cursor: pointer;
+}
+
+.modal-acciones {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+.modal-boton-cancelar {
+    padding: 0.4rem 1.2rem;
+    background-color: #c3ca3f; /* gris */
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+}
+
+.modal-boton-cancelar:hover {
+    background-color: #6b7280;
+}
+
+.modal-boton-guardar {
+    padding: 0.6rem 1.2rem;
+    background-color: rgb(17, 161, 194); /* azul */
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.modal-boton-guardar:hover {
+    background-color: #2a7b8a;
+}
+
+.modal-boton-guardar:active {
+    background-color: #3e8e41;
+}
+
+.modal-boton-cancelar:focus,
+.modal-boton-guardar:focus {
+    outline: none;
+}

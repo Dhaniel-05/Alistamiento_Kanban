@@ -1,0 +1,38 @@
+/* src/pages/Principal.css */
+.principal-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.menu-superior {
+  background-color: #1e3a8a; /* azul oscuro */
+  padding: 10px 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.menu-navegacion ul {
+  list-style: none;
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin: 0;
+  padding: 0;
+}
+
+.menu-navegacion a {
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 16px;
+  transition: color 0.3s;
+}
+
+.menu-navegacion a:hover {
+  color: #93c5fd; /* azul claro */
+}
+
+.principal-contenido {
+  flex: 1;
+  background-color: #f9fafb;
+}
