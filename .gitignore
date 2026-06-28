@@ -87,5 +87,9 @@ certs/
 *.key
 *.crt
 
-# eliminar la carpeta de cursor IA si no se utiliza
-.cursor\rules\seniorfullstack.mdc
+# ===== Otros =====
+.cursor/
+archivos_documentacion/
+/programa_228118.pdf
+/Programa_228118.xlsx
+/proyecto_2537295.pdf

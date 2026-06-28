@@ -3,27 +3,23 @@
  */
 
 import { useDrop } from 'react-dnd';
+import { useMemo, useState } from 'react';
 import TarjetaRAPSabana from './TarjetaRAPSabana';
-import { useState } from 'react';
 import { logger } from '../utils/logger';
+import { getRapSearchFields, matchesSearchQuery } from '../utils/searchText';
 
 const BandejaNoAsignados = ({ raps = [], onDesasignarRAP, onClickRAP }) => {
-
-  // ✅ Hook de búsqueda (DEBE IR AQUÍ)
-  const [busqueda, setBusqueda] = useState("");
+  const [busqueda, setBusqueda] = useState('');
 
   const [{ isOver, canDrop }, drop] = useDrop({
     accept: 'RAP_SABANA',
     drop: (item) => {
       logger.debug('🎯 Drop en bandeja no asignados:', item);
 
-      // ❌ AQUÍ NO VAN HOOKS
-      // const [busqueda, setBusqueda] = useState("");  <-- esto estaba mal
-
       if (item.asignacion) {
         onDesasignarRAP(
           item.asignacion.id_rap || item.id_rap,
-          item.asignacion.id_trimestre
+          item.asignacion.id_trimestre,
         );
       } else {
         logger.warn('RAP sin asignación en bandeja:', item);
@@ -40,16 +36,12 @@ const BandejaNoAsignados = ({ raps = [], onDesasignarRAP, onClickRAP }) => {
     if (onClickRAP) onClickRAP(rap);
   };
 
-  // ✅ Filtro de búsqueda
-  const rapsFiltrados = raps.filter((rap) => {
-    const texto = busqueda.toLowerCase();
-    return (
-      rap.nombre_competencia?.toLowerCase().includes(texto) ||
-      rap.codigo_competencia?.toLowerCase().includes(texto) ||
-      rap.codigo_norma?.toLowerCase().includes(texto)
-    );
-  });
+  const rapsFiltrados = useMemo(
+    () => raps.filter((rap) => matchesSearchQuery(busqueda, getRapSearchFields(rap))),
+    [raps, busqueda],
+  );
 
+  const hayFiltroActivo = busqueda.trim().length > 0;
 
   return (
     <div
@@ -59,17 +51,19 @@ const BandejaNoAsignados = ({ raps = [], onDesasignarRAP, onClickRAP }) => {
       <div className="bandeja-header">
         <h3 className="bandeja-titulo">RAPs No Asignados</h3>
         <span className="bandeja-contador">
-          {raps.length} RAP{raps.length !== 1 ? 's' : ''}
+          {hayFiltroActivo
+            ? `${rapsFiltrados.length} de ${raps.length}`
+            : `${raps.length} RAP${raps.length !== 1 ? 's' : ''}`}
         </span>
       </div>
 
-      {/* 🔍 Barra de búsqueda */}
       <input
         type="text"
         placeholder="Buscar RAP..."
         value={busqueda}
         onChange={(e) => setBusqueda(e.target.value)}
         className="bandeja-busqueda"
+        aria-label="Buscar RAP por nombre, código o competencia"
       />
 
       <div className="bandeja-cards">
@@ -86,7 +80,7 @@ const BandejaNoAsignados = ({ raps = [], onDesasignarRAP, onClickRAP }) => {
           ))
         ) : (
           <div className="bandeja-vacio">
-            Sin resultados
+            {hayFiltroActivo ? 'Sin resultados para la búsqueda' : 'Sin RAPs no asignados'}
           </div>
         )}
       </div>

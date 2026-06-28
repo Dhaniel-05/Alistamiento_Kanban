@@ -1,0 +1,91 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: alistamiento-db
+    restart: unless-stopped
+    networks:
+      - alistamiento_internal
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      # Init: MySQL ejecuta /docker-entrypoint-initdb.d/* SOLO si el volumen está vacío
+      # (primer arranque). Si mysql_data ya tiene datos, este script NO se vuelve a aplicar.
+      # Cambios de schema posteriores: migración manual (SQL/migrations), no reinicio del contenedor.
+      - ./Alistamiento_Backend/src/db/DB_Alistamiento.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  backend:
+    build:
+      context: ./Alistamiento_Backend
+      dockerfile: Dockerfile
+      target: production
+    container_name: alistamiento-backend
+    restart: unless-stopped
+    networks:
+      - alistamiento_internal
+    environment:
+      NODE_ENV: production
+      PORT: ${BACKEND_PORT:-3000}
+      DB_HOST: db
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      DB_NAME: ${MYSQL_DATABASE}
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      PYTHON_TIMEOUT_MS: ${PYTHON_TIMEOUT_MS:-120000}
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          "node -e \"fetch('http://127.0.0.1:3000/api/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\"",
+        ]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 45s
+
+  frontend:
+    build:
+      context: ./Alistamiento_Frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-/api}
+    container_name: alistamiento-frontend
+    restart: unless-stopped
+    networks:
+      - alistamiento_internal
+      - alistamiento_edge
+    ports:
+      - '${HTTP_PORT:-80}:80'
+      - '${HTTPS_PORT:-443}:443'
+    volumes:
+      - ${NGINX_CONFIG:-./Alistamiento_Frontend/nginx.conf.dev}:/etc/nginx/conf.d/default.conf:ro
+      - ${SSL_CERT_DIR:-./certs}:/etc/nginx/ssl:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+
+networks:
+  alistamiento_internal:
+    driver: bridge
+    internal: true
+  alistamiento_edge:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  uploads_data:
