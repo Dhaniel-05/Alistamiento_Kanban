@@ -7,12 +7,12 @@ class RolesPermisoController {
     try {
       const [rolesPermisos] = await db.query(`
         SELECT 
-          rp.id_roles_permiso, 
+          rp.id_roles_permiso AS id_rol_permiso, 
           rp.id_rol, 
           r.nombre AS rol, 
           p.id_permiso, 
-          p.nombre AS permiso
-        FROM roles_permiso rp
+          COALESCE(p.descripcion, p.nombre) AS permiso
+        FROM roles_permisos rp
         JOIN roles r ON rp.id_rol = r.id_rol
         JOIN permisos p ON rp.id_permiso = p.id_permiso
       `);
@@ -29,12 +29,12 @@ class RolesPermisoController {
     try {
       const [rolesPermisos] = await db.query(`
         SELECT 
-          rp.id_roles_permiso, 
+          rp.id_roles_permiso AS id_rol_permiso, 
           rp.id_rol, 
           r.nombre AS rol, 
           p.id_permiso, 
-          p.nombre AS permiso
-        FROM roles_permiso rp
+          COALESCE(p.descripcion, p.nombre) AS permiso
+        FROM roles_permisos rp
         JOIN roles r ON rp.id_rol = r.id_rol
         JOIN permisos p ON rp.id_permiso = p.id_permiso
         WHERE rp.id_rol = ?
@@ -52,10 +52,10 @@ class RolesPermisoController {
     try {
       const [rolPermiso] = await db.query(`
         SELECT 
-          rp.id_roles_permiso, 
+          rp.id_roles_permiso AS id_rol_permiso, 
           r.nombre AS rol, 
-          p.nombre AS permiso
-        FROM roles_permiso rp
+          COALESCE(p.descripcion, p.nombre) AS permiso
+        FROM roles_permisos rp
         JOIN roles r ON rp.id_rol = r.id_rol
         JOIN permisos p ON rp.id_permiso = p.id_permiso
         WHERE rp.id_roles_permiso = ?
@@ -81,7 +81,7 @@ class RolesPermisoController {
 
     try {
       await db.query(`
-        INSERT INTO roles_permiso (id_rol, id_permiso) VALUES (?, ?)
+        INSERT INTO roles_permisos (id_rol, id_permiso) VALUES (?, ?)
       `, [id_rol, id_permiso]);
       res.json({ mensaje: 'Permiso asignado al rol correctamente' });
     } catch (error) {
@@ -101,7 +101,7 @@ class RolesPermisoController {
 
     try {
       const [result] = await db.query(`
-        UPDATE roles_permiso SET id_rol = ?, id_permiso = ? WHERE id_roles_permiso = ?
+        UPDATE roles_permisos SET id_rol = ?, id_permiso = ? WHERE id_roles_permiso = ?
       `, [id_rol, id_permiso, id]);
 
       if (result.affectedRows === 0) {
@@ -119,7 +119,7 @@ class RolesPermisoController {
   async eliminarRolPermiso(req, res) {
     const { id } = req.params;
     try {
-      const [result] = await db.query('DELETE FROM roles_permiso WHERE id_roles_permiso = ?', [id]);
+      const [result] = await db.query('DELETE FROM roles_permisos WHERE id_roles_permiso = ?', [id]);
       if (result.affectedRows === 0) {
         return res.status(404).json({ error: 'Relación rol-permiso no encontrada' });
       }

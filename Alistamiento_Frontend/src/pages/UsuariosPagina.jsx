@@ -50,7 +50,7 @@ export const UsuariosPagina = () => {
     email: "",
     contrasena: "",
     id_rol: "",
-    estado: 1,
+    estado: 'Activo',
   });
 
   // Lista de dominios institucionales permitidos (puedes ampliarla)
@@ -336,7 +336,7 @@ export const UsuariosPagina = () => {
       email: "",
       contrasena: "",
       id_rol: "2", // Mantener como string para el input
-      estado: 1,
+      estado: 'Activo',
     };
 
     // Si estamos en modo edición, asegurarnos de mantener el ID y convertir el rol
@@ -412,7 +412,7 @@ export const UsuariosPagina = () => {
       email: correo,
       cedula: cedula,
       id_rol: formUsuario.id_rol || "2",
-      estado: formUsuario.estado || 1
+      estado: formUsuario.estado || 'Activo'
     };
 
     logger.debug("📤 Datos normalizados a enviar:", usuarioNormalizado);
@@ -528,8 +528,8 @@ export const UsuariosPagina = () => {
         fecha_inicio: ficha.fecha_inicio,
         fecha_final: ficha.fecha_final,
         cantidad_trimestre: ficha.cantidad_trimestre ?? 3,
+        gestor: ficha.gestor ?? ficha.id_instructor ?? null,
         instructores: ficha.instructores || [],
-        id_instructor: ficha.id_instructor || null,
       };
 
       if (fichaSeleccionada) {

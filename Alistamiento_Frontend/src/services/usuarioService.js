@@ -3,6 +3,30 @@ import { logger } from '../utils/logger';
 
 const INSTRUCTORES_PATH = '/instructores';
 
+function normalizeEstado(estado) {
+  if (estado === 'Deshabilitado' || estado === 0 || estado === '0') {
+    return 'Deshabilitado';
+  }
+  return 'Activo';
+}
+
+function extractApiErrorMessage(error, fallback) {
+  const data = error.response?.data;
+  if (!data) {
+    return error.message || fallback;
+  }
+  if (data.code === 'VALIDATION_ERROR') {
+    return 'Datos de entrada inválidos. Revisa los campos del formulario.';
+  }
+  if (typeof data.error === 'string') {
+    return data.error;
+  }
+  if (typeof data.mensaje === 'string') {
+    return data.mensaje;
+  }
+  return fallback;
+}
+
 export const leerUsuarios = async () => {
   try {
     const response = await httpClient.get(INSTRUCTORES_PATH);
@@ -20,7 +44,7 @@ export const crearUsuario = async (usuario) => {
     const usuarioCompleto = {
       ...usuario,
       id_rol: Number(usuario.id_rol) || 2,
-      estado: Number(usuario.estado) || 1,
+      estado: normalizeEstado(usuario.estado),
     };
 
     logger.debug('📤 Datos procesados para enviar:', usuarioCompleto);
@@ -29,10 +53,7 @@ export const crearUsuario = async (usuario) => {
     return response.data;
   } catch (error) {
     logger.error('❌ Error en crearUsuario:', error);
-    const message = error.response?.data
-      ? JSON.stringify(error.response.data)
-      : error.message;
-    throw new Error(message || 'Error al crear usuario');
+    throw new Error(extractApiErrorMessage(error, 'Error al crear usuario'));
   }
 };
 
@@ -56,7 +77,7 @@ export const actualizarUsuario = async (usuario) => {
         contrasena: usuario.contrasena,
       }),
       id_rol: Number(usuario.id_rol) || 2,
-      estado: Number(usuario.estado) || 1,
+      estado: normalizeEstado(usuario.estado),
     };
 
     logger.debug('🎯 Datos procesados para enviar:', datosParaEnviar);
@@ -66,8 +87,7 @@ export const actualizarUsuario = async (usuario) => {
     return response.data;
   } catch (error) {
     logger.error('❌ Error en actualizarUsuario:', error);
-    const errorData = error.response?.data;
-    throw new Error(errorData?.error || errorData?.mensaje || error.message);
+    throw new Error(extractApiErrorMessage(error, 'Error al actualizar usuario'));
   }
 };
 

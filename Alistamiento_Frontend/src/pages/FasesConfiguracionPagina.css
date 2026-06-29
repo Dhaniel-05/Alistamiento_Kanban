@@ -1,0 +1,59 @@
+.fases-config-pagina {
+  padding: 2rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.fases-config-pagina .pagina-titulo {
+  margin: 0 0 0.35rem;
+  font-size: 1.5rem;
+  color: #0f172a;
+}
+
+.fases-config-pagina .pagina-subtitulo {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.fases-config-pagina .pagina-boton {
+  background: #0f172a;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.fases-config-pagina .pagina-boton:hover {
+  background: #1e293b;
+}
+
+.fases-config-pagina .fases-config-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.fases-config-filtros {
+  margin-bottom: 16px;
+}
+
+.fase-color-swatch {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: 1px solid #d1d5db;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+.fase-color-code {
+  font-size: 13px;
+  color: #475569;
+  vertical-align: middle;
+}

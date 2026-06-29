@@ -72,14 +72,19 @@ class PdfController {
       removeFileSafe(pdfPath);
       pdfPath = null;
 
-      await pdfImportService.importProyecto(connection, {
+      await connection.beginTransaction();
+
+      const importResult = await pdfImportService.importProyecto(connection, {
         proyecto: resultadoProyecto.proyecto,
         fases: resultadoFases.fases,
         actividades: resultadoActividades.actividades,
       });
 
-      return res.status(200).json(resultadoProyecto);
+      await connection.commit();
+
+      return res.status(200).json({ ...resultadoProyecto, import: importResult });
     } catch (error) {
+      await connection.rollback();
       removeFileSafe(pdfPath);
       return next(error);
     } finally {

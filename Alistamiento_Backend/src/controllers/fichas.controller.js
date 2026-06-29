@@ -1,5 +1,6 @@
 const db = require("../config/conexion_db");
 const logger = require("../config/logger");
+const fichaService = require("../services/ficha.service");
 
 class FichasController {
   async obtenerFichasPorProgramas(req, res) {
@@ -48,7 +49,14 @@ class FichasController {
           f.fecha_final AS fecha_fin,
           f.cantidad_trimestre,
           f.id_programa,
-          p.nombre_programa
+          p.nombre_programa,
+          (
+            SELECT inf.id_instructor
+            FROM instructor_ficha inf
+            WHERE inf.id_ficha = f.id_ficha
+              AND UPPER(inf.rol) = 'GESTOR'
+            LIMIT 1
+          ) AS id_instructor
         FROM fichas f
         LEFT JOIN programa_formacion p ON f.id_programa = p.id_programa`
       );
@@ -60,97 +68,12 @@ class FichasController {
     }
   }
 
-  async agregarFichas(req, res) {
-    const {
-      id_programa,
-      codigo_ficha,
-      modalidad,
-      jornada,
-      ambiente,
-      fecha_inicio,
-      fecha_final,
-      cantidad_trimestre,
-      gestor,
-      instructores
-    } = req.body;
-
+  async agregarFichas(req, res, next) {
     try {
-      // 1 INSERTAR FICHA
-      const [fichaResult] = await db.query(
-        `INSERT INTO fichas 
-      (id_programa, codigo_ficha, modalidad, jornada, ambiente, fecha_inicio, fecha_final, cantidad_trimestre) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          id_programa,
-          codigo_ficha,
-          modalidad,
-          jornada,
-          ambiente,
-          fecha_inicio,
-          fecha_final,
-          cantidad_trimestre
-        ]
-      );
-
-      const id_ficha = fichaResult.insertId;
-
-      // 2 DEFINIR CANTIDAD DE TRIMESTRES SEGÚN JORNADA
-      let totalTrimestres = (jornada === "Diurna") ? 7 :
-        (jornada === "Nocturna") ? 9 : 0;
-
-      if (totalTrimestres === 0) {
-        return res.status(400).json({ error: "Jornada inválida" });
-      }
-
-      // 3 INSERTAR TRIMESTRES CON FASE AUTOMÁTICA
-      const fases = [
-        "ANÁLISIS",
-        "ANÁLISIS",
-        "PLANEACIÓN",
-        "EJECUCIÓN",
-        "EJECUCIÓN",
-        "EJECUCIÓN",
-        "EVALUACIÓN"
-      ];
-
-      const valores = [];
-      for (let t = 1; t <= totalTrimestres; t++) {
-        const fase = fases[t - 1] || "EJECUCIÓN"; // si es nocturna (8 o 9) usa EJECUCIÓN
-        valores.push([id_ficha, t, fase]);
-      }
-
-      await db.query(
-        "INSERT INTO trimestre (id_ficha, no_trimestre, fase) VALUES ?",
-        [valores]
-      );
-
-      // 5 INSERTAR GESTOR
-      if (gestor) {
-        await db.query(
-          "INSERT INTO instructor_ficha (id_instructor, id_ficha, rol) VALUES (?, ?, 'Gestor')",
-          [gestor, id_ficha]
-        );
-      }
-
-      // 6 INSERTAR INSTRUCTORES
-      if (Array.isArray(instructores)) {
-        for (const inst of instructores) {
-          await db.query(
-            "INSERT INTO instructor_ficha (id_instructor, id_ficha, rol) VALUES (?, ?, 'Instructor')",
-            [inst, id_ficha]
-          );
-        }
-      }
-
-      res.json({
-        mensaje: "Ficha creada correctamente",
-        id_ficha,
-        trimestres_creados: totalTrimestres
-      });
-
+      const result = await fichaService.crearFicha(req.body);
+      res.json(result);
     } catch (error) {
-      logger.error('Error al crear ficha', { stack: error.stack });
-      res.status(500).json({ error: "Error al crear ficha" });
+      next(error);
     }
   }
 
@@ -195,7 +118,7 @@ class FichasController {
       // 2 Insertar nuevo gestor
       if (gestor) {
         await db.query(
-          "INSERT INTO instructor_ficha (id_instructor, id_ficha, rol) VALUES (?, ?, 'GESTOR')",
+          "INSERT INTO instructor_ficha (id_instructor, id_ficha, rol) VALUES (?, ?, 'Gestor')",
           [gestor, id]
         );
       }
@@ -204,7 +127,7 @@ class FichasController {
       if (Array.isArray(instructores)) {
         for (const inst of instructores) {
           await db.query(
-            "INSERT INTO instructor_ficha (id_instructor, id_ficha, rol) VALUES (?, ?, 'INSTRUCTOR')",
+            "INSERT INTO instructor_ficha (id_instructor, id_ficha, rol) VALUES (?, ?, 'Instructor')",
             [inst, id]
           );
         }

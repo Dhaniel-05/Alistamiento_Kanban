@@ -1,14 +1,15 @@
-﻿-- Docker init: schema + views from DB_Alistamiento.sql
--- Stored procedures omitted (logic in planeacion.service.js / rapTrimestre.repository.js)
--- Executed against MYSQL_DATABASE created by the MySQL container entrypoint.
+CREATE DATABASE alistamiento_db;
+USE alistamiento_db;
+
 CREATE TABLE permisos (
     id_permiso INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL
-    );
+    nombre VARCHAR(100) NOT NULL UNIQUE,   -- clave de máquina: 'ficha.crear'
+    descripcion VARCHAR(255)
+);
 
     CREATE TABLE roles (
     id_rol INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL
+    nombre VARCHAR(100) NOT NULL UNIQUE
     );
 
     -- Insertar roles iniciales
@@ -20,13 +21,53 @@ CREATE TABLE permisos (
     id_roles_permiso INT AUTO_INCREMENT PRIMARY KEY,
     id_permiso INT NOT NULL,
     id_rol INT NOT NULL,
+    CONSTRAINT uq_rol_permiso UNIQUE (id_rol,id_permiso),
     FOREIGN KEY (id_permiso) REFERENCES permisos (id_permiso) ON DELETE RESTRICT ON UPDATE CASCADE,
     FOREIGN KEY (id_rol) REFERENCES roles (id_rol) ON DELETE RESTRICT ON UPDATE CASCADE
     );
+    
+    -- ===== CATÁLOGO DE PERMISOS =====
+INSERT INTO permisos (nombre, descripcion) VALUES
+('programa.leer',       'Ver programas de formación'),
+('programa.crear',      'Crear programas de formación'),
+('programa.editar',     'Editar programas de formación'),
+('programa.eliminar',   'Eliminar programas de formación'),
+('ficha.leer',          'Ver fichas'),
+('ficha.crear',         'Crear fichas'),
+('ficha.editar',        'Editar fichas'),
+('ficha.eliminar',      'Eliminar fichas'),
+('instructor.leer',     'Ver instructores'),
+('instructor.crear',    'Crear instructores'),
+('instructor.editar',   'Editar instructores'),
+('instructor.eliminar', 'Eliminar instructores'),
+('fase.gestionar',      'Administrar la configuración de fases'),
+('permiso.administrar', 'Asignar permisos a roles');
 
-    CREATE TABLE programa_formacion (
+    
+-- ===== MAPA ROL -> PERMISO =====
+INSERT INTO roles_permisos (id_rol, id_permiso)
+SELECT r.id_rol, p.id_permiso
+FROM roles r CROSS JOIN permisos p
+WHERE r.nombre='Administrador';
+
+INSERT INTO roles_permisos (id_rol, id_permiso)
+SELECT r.id_rol, p.id_permiso
+FROM roles r
+JOIN permisos p
+ON p.nombre IN ('programa.leer','ficha.leer','ficha.crear','ficha.editar',
+'instructor.leer','instructor.crear','instructor.editar','fase.gestionar')
+WHERE r.nombre='Gestor';
+
+INSERT INTO roles_permisos (id_rol, id_permiso)
+SELECT r.id_rol, p.id_permiso
+FROM roles r
+JOIN permisos p
+ON p.nombre IN ('programa.leer','ficha.leer','instructor.leer','instructor.editar')
+WHERE r.nombre='Instructor';
+
+CREATE TABLE programa_formacion (
     id_programa INT AUTO_INCREMENT PRIMARY KEY,
-    codigo_programa VARCHAR(20),
+    codigo_programa VARCHAR(20) UNIQUE,
     nombre_programa TEXT NOT NULL,
     vigencia TEXT,
     tipo_programa VARCHAR(50),
@@ -39,7 +80,7 @@ CREATE TABLE permisos (
     CREATE TABLE fichas (
     id_ficha INT AUTO_INCREMENT PRIMARY KEY,
     id_programa INT, -- FK a Programa_formacion
-    codigo_ficha VARCHAR(20),
+    codigo_ficha VARCHAR(20) UNIQUE,
     modalidad VARCHAR(20),
     jornada ENUM("Diurna","Nocturna"),
     ambiente VARCHAR(10),
@@ -48,14 +89,61 @@ CREATE TABLE permisos (
     cantidad_trimestre INT,
     FOREIGN KEY (id_programa) REFERENCES programa_formacion (id_programa) ON DELETE SET NULL ON UPDATE CASCADE
     );
+    
+    -- ===== MODELO DE FASES (plantilla + por ficha con bloqueo) =====
+
+-- Plantilla maestra: se copia a cada ficha según su jornada. Editable por admin.
+CREATE TABLE fases_configuracion (
+    id_fase_config INT AUTO_INCREMENT PRIMARY KEY,
+    jornada ENUM('Diurna','Nocturna','Personalizada') NOT NULL,
+    nombre_fase VARCHAR(100) NOT NULL,   -- admite sub-etapas: 'Análisis 1', 'Análisis 2'...
+    orden INT NOT NULL,
+    color VARCHAR(20) DEFAULT '#3B82F6',
+    descripcion TEXT,
+    activo TINYINT(1) DEFAULT 1,
+    UNIQUE KEY jornada_nombre_fase (jornada, nombre_fase)
+);
+
+-- Fases concretas de cada ficha = los lanes del tablero. 'estado' permite bloquear.
+CREATE TABLE ficha_fases (
+    id_ficha_fase INT AUTO_INCREMENT PRIMARY KEY,
+    id_ficha INT NOT NULL,
+    nombre_fase VARCHAR(100) NOT NULL,
+    orden INT NOT NULL,
+    color VARCHAR(20) DEFAULT '#3B82F6',
+    estado ENUM('Abierta','Bloqueada') DEFAULT 'Abierta',
+    activo TINYINT(1) DEFAULT 1,
+    UNIQUE KEY ficha_nombre_fase (id_ficha, nombre_fase),
+    FOREIGN KEY (id_ficha) REFERENCES fichas (id_ficha) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- Semilla inicial (punto de partida; luego se edita desde el panel admin).
+-- 4 fases SENA subdivididas, para Diurna y Nocturna.
+INSERT INTO fases_configuracion (jornada, nombre_fase, orden, color) VALUES
+('Diurna','Análisis 1',1,'#3B82F6'),
+('Diurna','Análisis 2',2,'#3B82F6'),
+('Diurna','Planeación 1',3,'#F59E0B'),
+('Diurna','Planeación 2',4,'#F59E0B'),
+('Diurna','Ejecución 1',5,'#10B981'),
+('Diurna','Ejecución 2',6,'#10B981'),
+('Diurna','Evaluación',7,'#8B5CF6'),
+('Nocturna','Análisis 1',1,'#3B82F6'),
+('Nocturna','Análisis 2',2,'#3B82F6'),
+('Nocturna','Planeación 1',3,'#F59E0B'),
+('Nocturna','Planeación 2',4,'#F59E0B'),
+('Nocturna','Planeación 3',5,'#F59E0B'),
+('Nocturna','Ejecución 1',6,'#10B981'),
+('Nocturna','Ejecución 2',7,'#10B981'),
+('Nocturna','Ejecución 3',8,'#10B981'),
+('Nocturna','Evaluación',9,'#8B5CF6');
 
     CREATE TABLE instructores (
     id_instructor INT AUTO_INCREMENT PRIMARY KEY,
     id_rol INT, -- FK a Roles
     nombre VARCHAR(150) NOT NULL,
-    email VARCHAR(150),
+    email VARCHAR(150) UNIQUE,
     contrasena VARCHAR(200),
-    cedula VARCHAR(50),
+    cedula VARCHAR(50) UNIQUE,
     estado ENUM("Activo", "Deshabilitado"),
     primer_acceso TINYINT DEFAULT 1,
     FOREIGN KEY (id_rol) REFERENCES roles (id_rol) ON DELETE SET NULL ON UPDATE CASCADE
@@ -63,8 +151,8 @@ CREATE TABLE permisos (
 
     -- Insertar instructor administrador inicial
     INSERT INTO instructores (id_rol, nombre, email, contrasena, cedula, estado)
-    VALUES (1, 'Admin', 'administracion@sena.edu.co', '$2a$10$tksuZTKKUcHP63p8QvD0LOPTPT8PmJeTw25tnrLIkPNpIsLg5e7G.', '1234567890', '1');
-    -- contraseÃ±a de administracion@sena.edu.co es = 12345678
+    VALUES (1, 'Admin', 'administracion@sena.edu.co', '$2b$10$Oe6zbHsOF0L9MUDq7g42UOefv1tcTMLDBaBILVgmhsdBmK74BzQDO', '051184', 'Activo');
+    -- contraseña de administracion@sena.edu.co es = Daniel8008
 
     CREATE TABLE instructor_ficha (
     id_instructor_ficha INT AUTO_INCREMENT PRIMARY KEY,
@@ -78,7 +166,7 @@ CREATE TABLE permisos (
     CREATE TABLE competencias (
     id_competencia INT AUTO_INCREMENT PRIMARY KEY,
     id_programa INT, -- FK a Programa_formacion
-    codigo_norma TEXT,
+    codigo_norma VARCHAR(30) UNIQUE,
     duracion_maxima INT,
     nombre_competencia TEXT,
     unidad_competencia TEXT,
@@ -93,7 +181,7 @@ CREATE TABLE permisos (
     CREATE TABLE proyectos (
     id_proyecto INT AUTO_INCREMENT PRIMARY KEY,
     id_programa INT, -- FK a Programa_formacion
-    codigo_proyecto TEXT,
+    codigo_proyecto VARCHAR(30),
     nombre_proyecto TEXT,
     codigo_programa VARCHAR(20),
     centro_formacion TEXT,
@@ -132,6 +220,7 @@ CREATE TABLE permisos (
     denominacion TEXT,
     duracion INT,
     codigo VARCHAR(20),
+    UNIQUE KEY uq_rap_competencia_codigo (id_competencia, codigo),
     FOREIGN KEY (id_competencia) REFERENCES competencias (id_competencia) ON DELETE SET NULL ON UPDATE CASCADE
     );
 
@@ -171,7 +260,7 @@ CREATE TABLE permisos (
     FOREIGN KEY (id_rap) REFERENCES raps (id_rap) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
--- SÃ¡bana de asignaciÃ³n de RAPs a trimestres y fichas
+-- Sábana de asignación de RAPs a trimestres y fichas
 CREATE TABLE rap_trimestre (
     id_rap_trimestre INT AUTO_INCREMENT PRIMARY KEY,
     id_rap INT NOT NULL,
@@ -196,7 +285,7 @@ CREATE TABLE detalle_planeacion_pedagogica (
     nombre_rap TEXT,
     competencia TEXT,
     horas_trimestre INT,
-    -- Datos pedagÃ³gicos
+    -- Datos pedagógicos
     actividades_aprendizaje TEXT,
     duracion_directa INT,
     duracion_independiente INT,
@@ -205,136 +294,12 @@ CREATE TABLE detalle_planeacion_pedagogica (
     ambientes_aprendizaje VARCHAR(100),
     materiales_formacion TEXT,
     observaciones TEXT,
-    -- InformaciÃ³n de saberes y criterios
+    -- Información de saberes y criterios
     saberes_conceptos TEXT,
     saberes_proceso TEXT,
     criterios_evaluacion TEXT,
-    -- AuditorÃ­a
+    -- Auditoría
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (id_planeacion) REFERENCES planeacion_pedagogica(id_planeacion) ON DELETE CASCADE,
     FOREIGN KEY (id_rap) REFERENCES raps(id_rap) ON DELETE CASCADE
 );
-
--- Vistas para la sÃ¡bana de asignaciÃ³n de RAPs a trimestres y fichas
-CREATE OR REPLACE VIEW v_sabana_base AS
-SELECT 
-    f.id_ficha,
-    c.id_competencia,
-    c.codigo_norma,
-    c.nombre_competencia,
-    c.duracion_maxima,
-    r.id_rap,
-    r.codigo AS codigo_rap,
-    r.denominacion AS descripcion_rap,
-    r.duracion AS duracion_rap,
-    t.id_trimestre,
-    t.no_trimestre,
-    t.fase AS nombre_fase,
-    rt.id_rap_trimestre,
-    rt.horas_trimestre,
-    rt.horas_semana,
-    rt.estado,
-    rt.id_instructor,
-    instr.nombre AS instructor_asignado
-
-FROM fichas f
-JOIN proyectos p ON f.id_programa = p.id_programa
-JOIN competencias c ON c.id_programa = p.id_programa
-JOIN raps r ON r.id_competencia = c.id_competencia
-CROSS JOIN trimestre t
-LEFT JOIN rap_trimestre rt 
-        ON rt.id_rap = r.id_rap 
-        AND rt.id_trimestre = t.id_trimestre 
-        AND rt.id_ficha = f.id_ficha
-LEFT JOIN instructores instr 
-        ON instr.id_instructor = rt.id_instructor
-ORDER BY c.id_competencia, CAST(r.codigo AS UNSIGNED), r.id_rap;
-
--- Vista matriz sÃ¡bana
-CREATE OR REPLACE VIEW v_sabana_matriz AS
-SELECT 
-    id_ficha,
-    id_competencia,
-    codigo_norma,
-    nombre_competencia,
-    duracion_maxima,
-    id_rap,
-    codigo_rap,
-    descripcion_rap,
-    duracion_rap,
-
-    -- TRIMESTRE 1
-    MAX(CASE WHEN no_trimestre = 1 THEN id_rap_trimestre END) AS t1_id_rap_trimestre,
-    ROUND(MAX(CASE WHEN no_trimestre = 1 THEN horas_trimestre END)) AS t1_htrim,
-    ROUND(MAX(CASE WHEN no_trimestre = 1 THEN horas_semana END)) AS t1_hsem,
-    MAX(CASE WHEN no_trimestre = 1 THEN id_instructor END) AS t1_id_instructor,
-    MAX(CASE WHEN no_trimestre = 1 THEN instructor_asignado END) AS t1_instructor,
-
-    -- TRIMESTRE 2
-    MAX(CASE WHEN no_trimestre = 2 THEN id_rap_trimestre END) AS t2_id_rap_trimestre,
-    ROUND(MAX(CASE WHEN no_trimestre = 2 THEN horas_trimestre END)) AS t2_htrim,
-    ROUND(MAX(CASE WHEN no_trimestre = 2 THEN horas_semana END)) AS t2_hsem,
-    MAX(CASE WHEN no_trimestre = 2 THEN id_instructor END) AS t2_id_instructor,
-    MAX(CASE WHEN no_trimestre = 2 THEN instructor_asignado END) AS t2_instructor,
-
-    -- TRIMESTRE 3
-    MAX(CASE WHEN no_trimestre = 3 THEN id_rap_trimestre END) AS t3_id_rap_trimestre,
-    ROUND(MAX(CASE WHEN no_trimestre = 3 THEN horas_trimestre END)) AS t3_htrim,
-    ROUND(MAX(CASE WHEN no_trimestre = 3 THEN horas_semana END)) AS t3_hsem,
-    MAX(CASE WHEN no_trimestre = 3 THEN id_instructor END) AS t3_id_instructor,
-    MAX(CASE WHEN no_trimestre = 3 THEN instructor_asignado END) AS t3_instructor,
-
-    -- TRIMESTRE 4
-    MAX(CASE WHEN no_trimestre = 4 THEN id_rap_trimestre END) AS t4_id_rap_trimestre,
-    ROUND(MAX(CASE WHEN no_trimestre = 4 THEN horas_trimestre END)) AS t4_htrim,
-    ROUND(MAX(CASE WHEN no_trimestre = 4 THEN horas_semana END)) AS t4_hsem,
-    MAX(CASE WHEN no_trimestre = 4 THEN id_instructor END) AS t4_id_instructor,
-    MAX(CASE WHEN no_trimestre = 4 THEN instructor_asignado END) AS t4_instructor,
-
-    -- TRIMESTRE 5
-    MAX(CASE WHEN no_trimestre = 5 THEN id_rap_trimestre END) AS t5_id_rap_trimestre,
-    ROUND(MAX(CASE WHEN no_trimestre = 5 THEN horas_trimestre END)) AS t5_htrim,
-    ROUND(MAX(CASE WHEN no_trimestre = 5 THEN horas_semana END)) AS t5_hsem,
-    MAX(CASE WHEN no_trimestre = 5 THEN id_instructor END) AS t5_id_instructor,
-    MAX(CASE WHEN no_trimestre = 5 THEN instructor_asignado END) AS t5_instructor,
-
-    -- TRIMESTRE 6
-    MAX(CASE WHEN no_trimestre = 6 THEN id_rap_trimestre END) AS t6_id_rap_trimestre,
-    ROUND(MAX(CASE WHEN no_trimestre = 6 THEN horas_trimestre END)) AS t6_htrim,
-    ROUND(MAX(CASE WHEN no_trimestre = 6 THEN horas_semana END)) AS t6_hsem,
-    MAX(CASE WHEN no_trimestre = 6 THEN id_instructor END) AS t6_id_instructor,
-    MAX(CASE WHEN no_trimestre = 6 THEN instructor_asignado END) AS t6_instructor,
-
-    -- TRIMESTRE 7
-    MAX(CASE WHEN no_trimestre = 7 THEN id_rap_trimestre END) AS t7_id_rap_trimestre,
-    ROUND(MAX(CASE WHEN no_trimestre = 7 THEN horas_trimestre END)) AS t7_htrim,
-    ROUND(MAX(CASE WHEN no_trimestre = 7 THEN horas_semana END)) AS t7_hsem,
-    MAX(CASE WHEN no_trimestre = 7 THEN id_instructor END) AS t7_id_instructor,
-    MAX(CASE WHEN no_trimestre = 7 THEN instructor_asignado END) AS t7_instructor,
-
-    -- TRIMESTRE 8 (NOCTURNA)
-    MAX(CASE WHEN no_trimestre = 8 THEN id_rap_trimestre END) AS t8_id_rap_trimestre,
-    ROUND(MAX(CASE WHEN no_trimestre = 8 THEN horas_trimestre END)) AS t8_htrim,
-    ROUND(MAX(CASE WHEN no_trimestre = 8 THEN horas_semana END)) AS t8_hsem,
-    MAX(CASE WHEN no_trimestre = 8 THEN id_instructor END) AS t8_id_instructor,
-    MAX(CASE WHEN no_trimestre = 8 THEN instructor_asignado END) AS t8_instructor,
-
-    -- TRIMESTRE 9 (NOCTURNA)
-    MAX(CASE WHEN no_trimestre = 9 THEN id_rap_trimestre END) AS t9_id_rap_trimestre,
-    ROUND(MAX(CASE WHEN no_trimestre = 9 THEN horas_trimestre END)) AS t9_htrim,
-    ROUND(MAX(CASE WHEN no_trimestre = 9 THEN horas_semana END)) AS t9_hsem,
-    MAX(CASE WHEN no_trimestre = 9 THEN id_instructor END) AS t9_id_instructor,
-    MAX(CASE WHEN no_trimestre = 9 THEN instructor_asignado END) AS t9_instructor,
-    
-    -- TOTAL HORAS
-    COALESCE(SUM(horas_trimestre), 0) AS total_horas
-
-FROM v_sabana_base
-GROUP BY 
-    id_ficha, id_competencia, codigo_norma, nombre_competencia,
-    duracion_maxima, id_rap, codigo_rap, descripcion_rap, duracion_rap
-
-ORDER BY 
-    id_competencia,
-    CAST(codigo_rap AS UNSIGNED),
-    id_rap;

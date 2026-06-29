@@ -19,15 +19,27 @@
 
 .nav-link {
   text-decoration: none;
-  color: #cbd5e1;
+  color: #64748b;
   padding: 6px 12px;
   border-radius: 6px;
-  transition: background 0.2s;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: background 0.2s, color 0.2s;
 }
 
-.nav-link:hover {
-  background-color: #334155;
-  color: #fff;
+.nav-link:hover,
+.nav-link.active {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 .navbar-usuario {

@@ -65,6 +65,7 @@ app.use('/api/auth', require('./routes/auth.routes'));
 // Resto de /api exige token
 app.use('/api', validarToken);
 
+app.use('/api/fases-configuracion', require('./routes/fasesConfiguracion.routes'));
 app.use('/api/fichas', require('./routes/fichas.routes'));
 app.use('/api/programas', require('./routes/programas.routes'));
 app.use('/api/instructores', require('./routes/instructor.routes'));

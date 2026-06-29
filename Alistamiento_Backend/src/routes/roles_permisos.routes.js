@@ -7,7 +7,7 @@ const rolPermisoController = new RolPermisoController();
 
 router.use(autorizarRol('Administrador', 'Gestor'));
 
-router.get('/', (req, res) => rolPermisoController.obtenerRolPermisos(req, res));
+router.get('/', (req, res) => rolPermisoController.obtenerRolesPermisos(req, res));
 router.get('/rol/:idrol', (req, res) => rolPermisoController.obtenerPermisosDeRol(req, res));
 router.get('/:id', (req, res) => rolPermisoController.obtenerRolPermisoPorId(req, res));
 router.post('/', (req, res) => rolPermisoController.agregarRolPermiso(req, res));

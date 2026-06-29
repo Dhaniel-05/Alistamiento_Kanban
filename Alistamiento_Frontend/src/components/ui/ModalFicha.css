@@ -320,3 +320,82 @@
 .btn-cerrar-exito:hover {
   background: #218838;
 }
+
+/* Lista de selección de instructores */
+.instructor-checkbox-panel {
+  margin-top: 8px;
+}
+
+.instructor-checkbox-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.instructor-search-field {
+  flex: 1;
+}
+
+.instructor-selection-count {
+  font-size: 13px;
+  color: #555;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.instructor-checkbox-list {
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.instructor-checkbox-item {
+  border-bottom: 1px solid #ececec;
+  padding: 2px 8px;
+}
+
+.instructor-checkbox-item:last-child {
+  border-bottom: none;
+}
+
+.instructor-checkbox-item.is-gestor {
+  background: #f0f7ff;
+}
+
+.instructor-checkbox-item .MuiFormControlLabel-root {
+  margin: 0;
+  width: 100%;
+}
+
+.instructor-checkbox-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.instructor-checkbox-email {
+  color: #666;
+  font-size: 13px;
+}
+
+.gestor-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #007bff;
+  background: #e7f1ff;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.instructor-checkbox-empty {
+  margin: 0;
+  padding: 16px;
+  text-align: center;
+  font-size: 13px;
+  color: #888;
+}

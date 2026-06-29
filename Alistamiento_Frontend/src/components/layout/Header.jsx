@@ -6,6 +6,7 @@ import "./Header.css";
 import logo from "../../assets/nodorap.png";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import LogoutIcon from "@mui/icons-material/Logout";
+import { Navbar } from "./Navbar";
 
 export const Header = () => {
   const { user, logout } = useAuthContext();
@@ -27,6 +28,8 @@ export const Header = () => {
           </p>
         </div>
       </div>
+
+      <Navbar />
 
       <div className="header-right">
         <div className="user-info">

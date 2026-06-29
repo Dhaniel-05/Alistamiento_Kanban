@@ -1,17 +1,19 @@
 const db = require('../config/conexion_db');
+const logger = require('../config/logger');
 
 class RolesController {
   async obtenerRoles(req, res) {
     try {
       const [roles] = await db.query(`
         SELECT r.id_rol, r.nombre,
-        COUNT(u.id_intructor) AS cantidad_intructores
+        COUNT(i.id_instructor) AS cantidad_instructores
         FROM roles r
-        LEFT JOIN intructores u ON u.id_rol = r.id_rol
+        LEFT JOIN instructores i ON i.id_rol = r.id_rol
         GROUP BY r.id_rol, r.nombre
       `);
       res.json(roles);
     } catch (error) {
+      logger.error('Error al obtener roles', { stack: error.stack });
       res.status(500).json({ error: 'Error al obtener roles' });
     }
   }
@@ -19,7 +21,10 @@ class RolesController {
   async obtenerRolPorId(req, res) {
     const { id } = req.params;
     try {
-      const [rolRows] = await db.query('SELECT * FROM roles WHERE id_rol = ?', [id]);
+      const [rolRows] = await db.query(
+        'SELECT id_rol, nombre FROM roles WHERE id_rol = ?',
+        [id],
+      );
 
       if (rolRows.length === 0) {
         return res.status(404).json({ error: 'Rol no encontrado' });
@@ -40,6 +45,7 @@ class RolesController {
 
       res.json(rol);
     } catch (error) {
+      logger.error('Error al obtener rol con permisos', { stack: error.stack });
       res.status(500).json({ error: 'Error al obtener rol con permisos' });
     }
   }

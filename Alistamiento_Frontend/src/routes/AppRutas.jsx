@@ -22,6 +22,11 @@ const PlaneacionPedagogica = lazy(() =>
 const InstructorDashboard = lazy(() =>
   import("../pages/instructor/InstructorDashboard").then((m) => ({ default: m.InstructorDashboard })),
 );
+const FasesConfiguracionPagina = lazy(() =>
+  import("../pages/FasesConfiguracionPagina").then((m) => ({ default: m.FasesConfiguracionPagina })),
+);
+
+const ADMIN_GESTOR_ROLES = ["Administrador", "Gestor"];
 
 const LazyPage = ({ children }) => (
   <Suspense fallback={<PageLoader />}>{children}</Suspense>
@@ -138,6 +143,17 @@ export const AppRutas = () => (
         <PrivateRoute allowedRoles={["Instructor"]}>
           <LazyPage>
             <SabanaPagina />
+          </LazyPage>
+        </PrivateRoute>
+      }
+    />
+
+    <Route
+      path="/fases-configuracion"
+      element={
+        <PrivateRoute allowedRoles={ADMIN_GESTOR_ROLES}>
+          <LazyPage>
+            <FasesConfiguracionPagina />
           </LazyPage>
         </PrivateRoute>
       }

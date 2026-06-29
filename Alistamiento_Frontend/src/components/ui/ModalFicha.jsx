@@ -1,7 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { logger } from "../../utils/logger";
 import "./ModalFicha.css";
-import { ChevronDown, Plus, Trash2 } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+import Checkbox from "@mui/material/Checkbox";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import TextField from "@mui/material/TextField";
 import httpClient from "../../services/httpClient";
 import { ModalExito } from "./ModalExito";
 import { ModalError } from "./ModalError";
@@ -28,10 +31,9 @@ export const ModalFicha = ({ onClose, onSave, fichaSeleccionada, fichasExistente
   const [programas, setProgramas] = useState([]);
   const [correosInstructoresDB, setCorreosInstructoresDB] = useState([]);
 
-  // VINCULAR INSTRUCTORES 
-  const [instructorEmail, setInstructorEmail] = useState("");
-  const [instructorEncontrado, setInstructorEncontrado] = useState(null);
+  // VINCULAR INSTRUCTORES
   const [instructoresVinculados, setInstructoresVinculados] = useState([]);
+  const [filtroInstructores, setFiltroInstructores] = useState("");
 
   // util: suma meses conservando día cuando sea posible 
   const addMonthsSafe = (dateStr, months) => {
@@ -72,23 +74,61 @@ export const ModalFicha = ({ onClose, onSave, fichaSeleccionada, fichasExistente
     return fecha1Str === fecha2Str;
   };
 
-  // Cargar instructores y programas desde la BD 
+  // Cargar instructores y programas desde la BD
   useEffect(() => {
+    const esRolGestor = (rol) => String(rol || "").toUpperCase() === "GESTOR";
+
+    const cargarInstructoresVinculados = async (idFicha, listaInstructores, gestorIdInicial) => {
+      try {
+        const res = await httpClient.get(`/sabana/instructores/${idFicha}`);
+        const vinculadosApi = res.data?.data || [];
+
+        const gestorDesdeApi = vinculadosApi.find((v) => esRolGestor(v.rol));
+        const gestorId = gestorDesdeApi?.id_instructor ?? gestorIdInicial ?? null;
+
+        if (gestorId != null && gestorId !== "") {
+          setGestor(String(gestorId));
+        }
+
+        const mapeados = vinculadosApi
+          .filter((v) => !esRolGestor(v.rol))
+          .filter((v) => String(v.id_instructor) !== String(gestorId))
+          .map((v) => listaInstructores.find((i) => i.id_instructor === v.id_instructor) || v);
+
+        setInstructoresVinculados(mapeados);
+      } catch (error) {
+        logger.warn("No se pudieron cargar instructores vinculados:", error);
+        if (gestorIdInicial != null && gestorIdInicial !== "") {
+          setGestor(String(gestorIdInicial));
+        }
+        setInstructoresVinculados([]);
+      }
+    };
+
     const cargarDatos = async () => {
       try {
-        const resInstructores = await httpClient.get('/instructores');
-        const resProgramas = await httpClient.get('/programas');
+        const [resInstructores, resProgramas] = await Promise.all([
+          httpClient.get('/instructores'),
+          httpClient.get('/programas'),
+        ]);
 
-        // Filtrar solo instructores (excluir administradores) 
         const soloInstructores = resInstructores.data.filter(
-          inst => inst.rol !== "Administrador"
+          (inst) => inst.rol !== "Administrador"
         );
         setCorreosInstructoresDB(soloInstructores);
         setProgramas(resProgramas.data);
 
-        // Si estamos editando, cargar los datos de la ficha seleccionada
         if (fichaSeleccionada) {
           cargarDatosFicha();
+          await cargarInstructoresVinculados(
+            fichaSeleccionada.id_ficha,
+            soloInstructores,
+            fichaSeleccionada.id_instructor,
+          );
+        } else {
+          setInstructoresVinculados([]);
+          setFiltroInstructores("");
+          setGestor("");
         }
       } catch (error) {
         logger.error("Error cargando datos:", error);
@@ -97,6 +137,42 @@ export const ModalFicha = ({ onClose, onSave, fichaSeleccionada, fichasExistente
     };
     cargarDatos();
   }, [fichaSeleccionada]);
+
+  // El gestor se asigna aparte; no debe figurar en instructores vinculados
+  useEffect(() => {
+    if (!gestor) return;
+    setInstructoresVinculados((prev) =>
+      prev.filter((i) => String(i.id_instructor) !== String(gestor))
+    );
+  }, [gestor]);
+
+  const instructoresFiltrados = useMemo(() => {
+    const termino = filtroInstructores.trim().toLowerCase();
+    if (!termino) return correosInstructoresDB;
+
+    return correosInstructoresDB.filter((inst) => {
+      const nombre = (inst.nombre || "").toLowerCase();
+      const email = (inst.email || "").toLowerCase();
+      return nombre.includes(termino) || email.includes(termino);
+    });
+  }, [correosInstructoresDB, filtroInstructores]);
+
+  const toggleInstructorVinculado = (instructor) => {
+    if (String(instructor.id_instructor) === String(gestor)) {
+      return;
+    }
+
+    setInstructoresVinculados((prev) => {
+      const yaVinculado = prev.some((i) => i.id_instructor === instructor.id_instructor);
+      if (yaVinculado) {
+        return prev.filter((i) => i.id_instructor !== instructor.id_instructor);
+      }
+      return [...prev, instructor];
+    });
+  };
+
+  const esInstructorVinculado = (idInstructor) =>
+    instructoresVinculados.some((i) => i.id_instructor === idInstructor);
 
   // Cargar datos de la ficha cuando estamos en modo edición
   const cargarDatosFicha = () => {
@@ -108,33 +184,13 @@ export const ModalFicha = ({ onClose, onSave, fichaSeleccionada, fichasExistente
     setUbicacion(fichaSeleccionada.ubicacion);
     setFechaInicio(new Date(fichaSeleccionada.fecha_inicio).toISOString().split('T')[0]);
     setFechaFin(new Date(fichaSeleccionada.fecha_fin).toISOString().split('T')[0]);
-    setGestor(fichaSeleccionada.id_instructor);
 
-    // Calcular minFechaFin para edición
+    if (fichaSeleccionada.id_instructor != null && fichaSeleccionada.id_instructor !== "") {
+      setGestor(String(fichaSeleccionada.id_instructor));
+    }
+
     const minFinDate = addMonthsSafe(fichaSeleccionada.fecha_inicio, 12);
     setMinFechaFin(minFinDate.toISOString().split("T")[0]);
-
-    // Aquí deberías cargar los instructores vinculados si tienes esa información
-    // setInstructoresVinculados(fichaSeleccionada.instructores || []);
-  };
-
-  // Buscar instructor por correo 
-  const buscarInstructor = (correo) => {
-    setInstructorEmail(correo);
-    const encontrado = correosInstructoresDB.find(
-      (inst) => inst.email?.toLowerCase() === correo.toLowerCase()
-    );
-    setInstructorEncontrado(encontrado || null);
-  };
-
-  // Agregar instructor a la ficha 
-  const agregarInstructor = () => {
-    if (!instructorEncontrado) return;
-    if (!instructoresVinculados.some(i => i.id_instructor === instructorEncontrado.id_instructor)) {
-      setInstructoresVinculados([...instructoresVinculados, instructorEncontrado]);
-    }
-    setInstructorEmail("");
-    setInstructorEncontrado(null);
   };
 
   const handleJornadaChange = (e) => {
@@ -242,8 +298,8 @@ export const ModalFicha = ({ onClose, onSave, fichaSeleccionada, fichasExistente
       fecha_inicio: fechaInicio,
       fecha_final: fechaFin,
       cantidad_trimestre: cantidadTrimestre,
-      id_instructor: gestor,
-      instructores: instructoresVinculados.map(i => i.id_instructor)
+      gestor: gestor ? Number(gestor) : undefined,
+      instructores: instructoresVinculados.map((i) => i.id_instructor),
     };
 
     if (fichaSeleccionada) {
@@ -450,7 +506,7 @@ export const ModalFicha = ({ onClose, onSave, fichaSeleccionada, fichasExistente
                 <select value={gestor} onChange={(e) => setGestor(e.target.value)} required >
                   <option value="">Seleccionar instructor para gestor</option>
                   {correosInstructoresDB.map((inst) => (
-                    <option key={inst.id_instructor} value={inst.id_instructor}>
+                    <option key={inst.id_instructor} value={String(inst.id_instructor)}>
                       {inst.nombre} ({inst.email})
                     </option>
                   ))}
@@ -462,36 +518,62 @@ export const ModalFicha = ({ onClose, onSave, fichaSeleccionada, fichasExistente
             {/* Vincular Instructores */}
             <h4 className="section-title">Vincular Instructores</h4>
             <p className="section-text">
-              Escribe el correo del instructor registrado.
+              Selecciona los instructores que participarán en la ficha.
             </p>
-            <div className="add-instructor-box">
-              <input type="email" placeholder="instructor@sena.edu.co" value={instructorEmail} onChange={(e) => buscarInstructor(e.target.value)} />
-              <button type="button" className="add-btn" disabled={!instructorEncontrado} onClick={agregarInstructor} >
-                <Plus size={18} />
-                Añadir
-              </button>
-            </div>
 
-            {instructorEncontrado && (
-              <p style={{ fontSize: "13px", color: "#007bff" }}>
-                Instructor encontrado: <strong>{instructorEncontrado.nombre}</strong>
-              </p>
-            )}
-
-            {instructoresVinculados.length > 0 && (
-              <div>
-                <p className="section-text">
-                  <strong>Instructores vinculados ({instructoresVinculados.length}):</strong>
-                </p>
-                <ul className="instructor-list">
-                  {instructoresVinculados.map((inst) => (
-                    <li key={inst.id_instructor}>
-                      {inst.nombre} – {inst.email}
-                    </li>
-                  ))}
-                </ul>
+            <div className="instructor-checkbox-panel">
+              <div className="instructor-checkbox-toolbar">
+                <TextField
+                  size="small"
+                  fullWidth
+                  placeholder="Buscar por nombre o correo..."
+                  value={filtroInstructores}
+                  onChange={(e) => setFiltroInstructores(e.target.value)}
+                  className="instructor-search-field"
+                />
+                <span className="instructor-selection-count">
+                  {instructoresVinculados.length} seleccionado{instructoresVinculados.length !== 1 ? "s" : ""}
+                </span>
               </div>
-            )}
+
+              <div className="instructor-checkbox-list">
+                {instructoresFiltrados.length === 0 ? (
+                  <p className="instructor-checkbox-empty">
+                    No hay instructores que coincidan con la búsqueda.
+                  </p>
+                ) : (
+                  instructoresFiltrados.map((inst) => {
+                    const esGestor = String(inst.id_instructor) === String(gestor);
+                    const checked = esGestor || esInstructorVinculado(inst.id_instructor);
+
+                    return (
+                      <div
+                        key={inst.id_instructor}
+                        className={`instructor-checkbox-item${esGestor ? " is-gestor" : ""}`}
+                      >
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              size="small"
+                              checked={checked}
+                              disabled={esGestor}
+                              onChange={() => toggleInstructorVinculado(inst)}
+                            />
+                          }
+                          label={
+                            <span className="instructor-checkbox-label">
+                              <strong>{inst.nombre}</strong>
+                              <span className="instructor-checkbox-email">{inst.email}</span>
+                              {esGestor && <span className="gestor-badge">Gestor</span>}
+                            </span>
+                          }
+                        />
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
 
             {/* Botones */}
             <div className="modal-actions">

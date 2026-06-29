@@ -1,6 +1,7 @@
 const db = require("../config/conexion_db");
 const logger = require("../config/logger");
 const planeacionService = require("./planeacion.service");
+const sabanaRepository = require("../repositories/sabana.repository");
 
 /**
  * Servicio para gestionar el alistamiento de RAPs (Resultados de Aprendizaje)
@@ -322,7 +323,7 @@ class SabanaService {
   async obtenerInstructoresPorFicha(id_ficha) {
     try {
       const [instructores] = await db.query(
-        `SELECT DISTINCT i.id_instructor, i.nombre, i.email, i.cedula
+        `SELECT DISTINCT i.id_instructor, i.nombre, i.email, i.cedula, inf.rol
        FROM instructores i
        INNER JOIN instructor_ficha inf ON i.id_instructor = inf.id_instructor
        WHERE inf.id_ficha = ? AND i.estado = 'Activo'
@@ -401,60 +402,122 @@ class SabanaService {
   }
 
   /**
-   * Obtiene la vista v_sabana_base filtrada por ficha
+   * Construye la matriz de sábana a partir de filas base (equivalente a v_sabana_matriz).
+   * Agrupa por RAP y pivota dinámicamente por no_trimestre.
+   * @param {Array} baseRows
+   * @returns {Array}
+   */
+  _buildSabanaMatriz(baseRows) {
+    if (!baseRows.length) {
+      return [];
+    }
+
+    const trimestresEnFicha = [...new Set(baseRows.map((row) => row.no_trimestre))]
+      .sort((a, b) => a - b);
+
+    const groups = new Map();
+
+    for (const row of baseRows) {
+      if (!groups.has(row.id_rap)) {
+        groups.set(row.id_rap, {
+          base: {
+            id_ficha: row.id_ficha,
+            id_competencia: row.id_competencia,
+            codigo_norma: row.codigo_norma,
+            nombre_competencia: row.nombre_competencia,
+            duracion_maxima: row.duracion_maxima,
+            id_rap: row.id_rap,
+            codigo_rap: row.codigo_rap,
+            descripcion_rap: row.descripcion_rap,
+            duracion_rap: row.duracion_rap,
+          },
+          byTrimestre: new Map(),
+        });
+      }
+      groups.get(row.id_rap).byTrimestre.set(row.no_trimestre, row);
+    }
+
+    const matriz = [];
+
+    for (const { base, byTrimestre } of groups.values()) {
+      const fila = { ...base };
+      let totalHoras = 0;
+
+      for (const noTrimestre of trimestresEnFicha) {
+        const trimestreRow = byTrimestre.get(noTrimestre);
+        const prefix = `t${noTrimestre}`;
+
+        fila[`${prefix}_id_rap_trimestre`] = trimestreRow?.id_rap_trimestre ?? null;
+        fila[`${prefix}_htrim`] = trimestreRow?.horas_trimestre != null
+          ? Math.round(Number(trimestreRow.horas_trimestre))
+          : null;
+        fila[`${prefix}_hsem`] = trimestreRow?.horas_semana != null
+          ? Math.round(Number(trimestreRow.horas_semana))
+          : null;
+        fila[`${prefix}_id_instructor`] = trimestreRow?.id_instructor ?? null;
+        fila[`${prefix}_instructor`] = trimestreRow?.instructor_asignado ?? null;
+
+        if (trimestreRow?.horas_trimestre != null) {
+          totalHoras += Number(trimestreRow.horas_trimestre);
+        }
+      }
+
+      fila.total_horas = totalHoras;
+      matriz.push(fila);
+    }
+
+    matriz.sort((a, b) => {
+      if (a.id_competencia !== b.id_competencia) {
+        return a.id_competencia - b.id_competencia;
+      }
+      const codigoA = Number.parseInt(a.codigo_rap, 10) || 0;
+      const codigoB = Number.parseInt(b.codigo_rap, 10) || 0;
+      if (codigoA !== codigoB) {
+        return codigoA - codigoB;
+      }
+      return a.id_rap - b.id_rap;
+    });
+
+    return matriz;
+  }
+
+  /**
+   * Obtiene la sábana base de una ficha (sin vistas).
    * @param {number} id_ficha - ID de la ficha
    * @returns {Promise<Array>} Datos de la sabana base
    */
   async obtenerSabanaBase(id_ficha) {
     try {
-      // Validar que la ficha existe
-      const [fichas] = await db.query(`SELECT id_ficha FROM fichas WHERE id_ficha = ?`, [id_ficha]);
-
-      if (fichas.length === 0) {
+      const existe = await sabanaRepository.fichaExists(id_ficha);
+      if (!existe) {
         throw new Error("Ficha no encontrada");
       }
 
-      // La vista v_sabana_base ya incluye id_ficha, filtrar directamente
-      const [resultados] = await db.query(
-        `SELECT * FROM v_sabana_base
-         WHERE id_ficha = ?
-         ORDER BY id_competencia, CAST(codigo_rap AS UNSIGNED), no_trimestre`,
-        [id_ficha]
-      );
-
-      return resultados;
+      return await sabanaRepository.findSabanaBaseByFicha(id_ficha);
     } catch (error) {
-      logger.error("Error en obtenerSabanaBase", { stack: error.stack });
-      throw error;
+      logger.error("Error en obtenerSabanaBase", { stack: error.stack, id_ficha });
+      if (error.message === "Ficha no encontrada") {
+        throw error;
+      }
+      throw new Error("Error al obtener sabana base");
     }
   }
 
   /**
-   * Obtiene la vista v_sabana_matriz filtrada por ficha
+   * Obtiene la matriz de sábana de una ficha (sin vistas).
    * @param {number} id_ficha - ID de la ficha
    * @returns {Promise<Array>} Datos de la sabana matriz
    */
   async obtenerSabanaMatriz(id_ficha) {
     try {
-      // Validar que la ficha existe
-      const [fichas] = await db.query(`SELECT id_ficha FROM fichas WHERE id_ficha = ?`, [id_ficha]);
-
-      if (fichas.length === 0) {
-        throw new Error("Ficha no encontrada");
-      }
-
-      // La vista v_sabana_matriz ya incluye id_ficha, filtrar directamente
-      const [resultados] = await db.query(
-        `SELECT * FROM v_sabana_matriz
-         WHERE id_ficha = ?
-         ORDER BY id_competencia, CAST(codigo_rap AS UNSIGNED)`,
-        [id_ficha]
-      );
-
-      return resultados;
+      const baseRows = await this.obtenerSabanaBase(id_ficha);
+      return this._buildSabanaMatriz(baseRows);
     } catch (error) {
-      logger.error("Error en obtenerSabanaMatriz", { stack: error.stack });
-      throw error;
+      if (error.message === "Ficha no encontrada") {
+        throw error;
+      }
+      logger.error("Error en obtenerSabanaMatriz", { stack: error.stack, id_ficha });
+      throw new Error("Error al obtener sabana matriz");
     }
   }
 }
