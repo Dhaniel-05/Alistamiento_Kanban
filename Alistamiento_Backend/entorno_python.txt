@@ -1,0 +1,14 @@
+# Crear el entorno virtual de Python en la carpeta Backend
+python -m venv .venv
+
+# Activar el entorno virtual
+.venv\Scripts\activate
+
+# Desactivar el entorno virtual
+deactivate
+
+# Quitar restricciones en caso que se de. 
+PowerShell: Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+
+# Instalar dependencias del archivo requirements.txt, 
+pip install -r requirements.txt
