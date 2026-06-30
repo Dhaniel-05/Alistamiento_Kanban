@@ -23,7 +23,7 @@ class InstructoresController {
 
   async agregarInstructor(req, res, next) {
     try {
-      const result = await instructorService.create(req.body);
+      const result = await instructorService.create(req.body, req.user);
       res.json(result);
     } catch (error) {
       next(error);
@@ -32,7 +32,7 @@ class InstructoresController {
 
   async actualizarInstructor(req, res, next) {
     try {
-      const result = await instructorService.update(req.params.id, req.body);
+      const result = await instructorService.update(req.params.id, req.body, req.user);
       res.json(result);
     } catch (error) {
       next(error);

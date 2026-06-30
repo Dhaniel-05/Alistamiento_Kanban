@@ -9,6 +9,8 @@ import { ModalError } from '../../components/ui/ModalError';
 import { ModalConfirmacion } from '../../components/ui/ModalConfirmacion';
 import { useAuthContext } from '../../context/AuthContext';
 import { usePlaneacionPedagogica } from '../../hooks/usePlaneacionPedagogica';
+import { planeacionService } from '../../services/planeacionService';
+import { puedeEditarFicha } from '../../utils/permisos';
 import './PlaneacionPedagogica.css';
 
 const extraerTrimestreDeObservaciones = (observaciones) => {
@@ -24,6 +26,10 @@ const extraerTrimestreDeObservaciones = (observaciones) => {
 
 export const PlaneacionPedagogica = () => {
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [modoEdicion, setModoEdicion] = useState(false);
+  const [planeacionEnEdicion, setPlaneacionEnEdicion] = useState(null);
+  const [cargandoEdicion, setCargandoEdicion] = useState(false);
+  const [exportando, setExportando] = useState(null);
   const [mostrarVista, setMostrarVista] = useState(false);
 
   const [mostrarModalExito, setMostrarModalExito] = useState(false);
@@ -104,12 +110,74 @@ export const PlaneacionPedagogica = () => {
     setPlaneacionSeleccionada(null);
   };
 
-  const handleNuevaPlaneacion = () => setMostrarFormulario(true);
-  const handleCancelar = () => setMostrarFormulario(false);
+  const handleNuevaPlaneacion = () => {
+    setModoEdicion(false);
+    setPlaneacionEnEdicion(null);
+    setMostrarFormulario(true);
+  };
+
+  const handleCancelar = () => {
+    setMostrarFormulario(false);
+    setModoEdicion(false);
+    setPlaneacionEnEdicion(null);
+  };
+
+  const handleEditarPlaneacion = async (planeacion) => {
+    const idPlaneacion = planeacion.id_planeacion || planeacion.id;
+    setCargandoEdicion(idPlaneacion);
+
+    try {
+      const respuesta = await planeacionService.obtenerPlaneacionPorId(idPlaneacion);
+      const data = respuesta?.data ?? respuesta;
+
+      if (!data?.detalles?.length) {
+        throw new Error('La planeación no tiene detalles editables (falta id_detalle en el servidor)');
+      }
+
+      const sinIdDetalle = data.detalles.some((detalle) => !detalle.id_detalle);
+      if (sinIdDetalle) {
+        throw new Error('El servidor no devolvió id_detalle en todos los RAPs. No es posible editar.');
+      }
+
+      setPlaneacionEnEdicion(data);
+      setModoEdicion(true);
+      setMostrarFormulario(true);
+    } catch (error) {
+      logger.error('❌ Error cargando planeación para editar:', error);
+      setMensajeModal(error.message || 'No se pudo cargar la planeación para editar');
+      setMostrarModalError(true);
+    } finally {
+      setCargandoEdicion(null);
+    }
+  };
 
   const handleSolicitarEliminacion = (idPlaneacion) => {
     setPlaneacionAEliminar(idPlaneacion);
     setMostrarModalConfirmacion(true);
+  };
+
+  const handleExportarExcel = async (planeacion) => {
+    const idPlaneacion = planeacion.id_planeacion || planeacion.id;
+    const idFichaExport = planeacion.id_ficha || idFicha;
+    const idTrimestreExport = planeacion.id_trimestre;
+
+    if (!idFichaExport) {
+      setMensajeModal('No se pudo determinar la ficha para exportar la planeación.');
+      setMostrarModalError(true);
+      return;
+    }
+
+    setExportando(idPlaneacion);
+
+    try {
+      await planeacionService.exportarPlaneacionExcel(idFichaExport, idTrimestreExport);
+    } catch (error) {
+      logger.error('❌ Error exportando planeación a Excel:', error);
+      setMensajeModal(error.message || 'No se pudo exportar la planeación a Excel');
+      setMostrarModalError(true);
+    } finally {
+      setExportando(null);
+    }
   };
 
   const handleConfirmarEliminacion = async () => {
@@ -143,7 +211,11 @@ export const PlaneacionPedagogica = () => {
   const handlePlaneacionGuardada = () => {
     cargarPlaneaciones().catch(mostrarErrorCarga);
     setMostrarFormulario(false);
+    setModoEdicion(false);
+    setPlaneacionEnEdicion(null);
   };
+
+  const usuarioPuedeEditar = puedeEditarFicha(user);
 
   const handleCierreModalExito = () => {
     setMostrarModalExito(false);
@@ -161,6 +233,8 @@ export const PlaneacionPedagogica = () => {
           onPlaneacionGuardada={handlePlaneacionGuardada}
           idFicha={idFicha}
           fichaInfo={fichaInfo}
+          modoEdicion={modoEdicion}
+          planeacionInicial={planeacionEnEdicion}
         />
       </Layout>
     );
@@ -288,6 +362,40 @@ export const PlaneacionPedagogica = () => {
                     </div>
 
                     <div className="planeacion-actions">
+                      <button
+                        type="button"
+                        className="btn-icon btn-exportar"
+                        title="Exportar Excel"
+                        onClick={() => handleExportarExcel(planeacion)}
+                        disabled={exportando === (planeacion.id_planeacion || planeacion.id)}
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                          <polyline points="14 2 14 8 20 8" />
+                          <line x1="12" y1="18" x2="12" y2="12" />
+                          <polyline points="9 15 12 18 15 15" />
+                        </svg>
+                        {exportando === (planeacion.id_planeacion || planeacion.id)
+                          ? 'Exportando...'
+                          : 'Exportar Excel'}
+                      </button>
+                      {usuarioPuedeEditar && (
+                        <button
+                          type="button"
+                          className="btn-icon btn-editar"
+                          title="Editar"
+                          onClick={() => handleEditarPlaneacion(planeacion)}
+                          disabled={cargandoEdicion === (planeacion.id_planeacion || planeacion.id)}
+                        >
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                          </svg>
+                          {cargandoEdicion === (planeacion.id_planeacion || planeacion.id)
+                            ? 'Cargando...'
+                            : 'Editar'}
+                        </button>
+                      )}
                       <button
                         type="button"
                         className="btn-icon btn-eliminar"

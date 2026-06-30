@@ -7,12 +7,17 @@ import { ModalExito } from "../components/ui/ModalExito";
 import { ModalError } from "../components/ui/ModalError";
 import { ModalConfirmacion } from "../components/ui/ModalConfirmacion";
 import { Layout } from "../components/layout/Layout";
+import { useAuthContext } from "../context/AuthContext";
+import { tienePermiso } from "../utils/permisos";
 import { useUsuarios } from "../hooks/useUsuarios";
 import { useProgramas } from "../hooks/useProgramas";
 import { useFichas } from "../hooks/useFichas";
+import { leerRolesAsignables } from "../services/rolService";
 import "./Pagina.css";
 
 export const UsuariosPagina = () => {
+  const { user } = useAuthContext();
+  const puedeGestionarInstructores = tienePermiso(user, 'instructor.crear');
   const [seccionActiva, setSeccionActiva] = useState("instructores");
   const { usuarios, debugInfo, guardarUsuario, eliminarUsuarioPorId } = useUsuarios();
   const { programas, cargarProgramas, eliminarPrograma } = useProgramas();
@@ -23,8 +28,9 @@ export const UsuariosPagina = () => {
     eliminarFichaEnApi,
   } = useFichas({ autoLoad: false });
   const [mostrarModal, setMostrarModal] = useState(false);
+  const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
+  const [rolesAsignables, setRolesAsignables] = useState([]);
   const [mostrarModalPrograma, setMostrarModalPrograma] = useState(false);
-  const [modoEdicion, setModoEdicion] = useState(false);
   const [modalAbierto, setModalAbierto] = useState(false);
   const [fichaSeleccionada, setFichaSeleccionada] = useState(null);
 
@@ -35,233 +41,6 @@ export const UsuariosPagina = () => {
   const [mensajeModal, setMensajeModal] = useState('');
   const [elementoAEliminar, setElementoAEliminar] = useState(null);
   const [tipoAccion, setTipoAccion] = useState('');
-
-  // Estado para errores de validación en tiempo real
-  const [erroresValidacion, setErroresValidacion] = useState({
-    email: '',
-    cedula: '',
-    nombre: '',
-    contrasena: ''
-  });
-
-  const [formUsuario, setFormUsuario] = useState({
-    cedula: "",
-    nombre: "",
-    email: "",
-    contrasena: "",
-    id_rol: "",
-    estado: 'Activo',
-  });
-
-  // Lista de dominios institucionales permitidos (puedes ampliarla)
-  const dominiosPermitidos = [
-    'sena.edu.co',
-    'misena.edu.co',
-    'senavirtual.edu.co',
-    'edu.co',
-    'gmail.com',
-    'hotmail.com',
-    'outlook.com',
-    'yahoo.com',
-  ];
-
-  // ========== FUNCIONES DE VALIDACIÓN DE CORREO ==========
-
-  // Validación completa de correo electrónico
-  const validarEmailCompleto = (email) => {
-    const errores = [];
-
-    if (!email) {
-      return ["El correo electrónico es obligatorio"];
-    }
-
-    const emailNormalizado = email.trim().toLowerCase();
-
-    // 1. Validar longitud mínima total
-    if (emailNormalizado.length < 8) {
-      errores.push("El correo es demasiado corto (mínimo 8 caracteres)");
-    }
-
-    // 2. Validar formato básico
-    const partes = emailNormalizado.split('@');
-    if (partes.length !== 2) {
-      errores.push("Formato de correo inválido. Debe contener un solo '@'");
-      return errores;
-    }
-
-    const [usuario, dominio] = partes;
-
-    // 3. Validar parte local (antes del @)
-    if (usuario.length === 0) {
-      errores.push("La parte antes del '@' no puede estar vacía");
-    }
-
-    if (usuario.length > 64) {
-      errores.push("La parte antes del '@' es demasiado larga (máximo 64 caracteres)");
-    }
-
-    // Caracteres válidos en parte local
-    const regexUsuario = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+$/;
-    if (!regexUsuario.test(usuario.replace(/\.(?=.*\.)/g, ''))) {
-      errores.push("La parte antes del '@' contiene caracteres no permitidos");
-    }
-
-    // No puede empezar o terminar con punto
-    if (usuario.startsWith('.') || usuario.endsWith('.')) {
-      errores.push("La parte antes del '@' no puede empezar o terminar con punto");
-    }
-
-    // No puede tener puntos consecutivos
-    if (usuario.includes('..')) {
-      errores.push("La parte antes del '@' no puede tener puntos consecutivos");
-    }
-
-    // 4. Validar dominio (después del @)
-    if (dominio.length === 0) {
-      errores.push("El dominio no puede estar vacío");
-    }
-
-    if (dominio.length < 4) {
-      errores.push("El dominio es demasiado corto");
-    }
-
-    // 5. Validar estructura del dominio
-    const partesDominio = dominio.split('.');
-    if (partesDominio.length < 2) {
-      errores.push("El dominio debe contener al menos un punto (ej: dominio.com)");
-    }
-
-    // Cada parte del dominio debe tener al menos 2 caracteres
-    for (let i = 0; i < partesDominio.length; i++) {
-      if (partesDominio[i].length === 0) {
-        errores.push("El dominio no puede tener partes vacías entre puntos");
-      }
-      if (partesDominio[i].length === 1 && i < partesDominio.length - 1) {
-        errores.push("Cada parte del dominio debe tener al menos 2 caracteres");
-      }
-    }
-
-    // Última parte (TLD) debe tener al menos 2 caracteres
-    const tld = partesDominio[partesDominio.length - 1];
-    if (tld.length < 2) {
-      errores.push("La extensión del dominio debe tener al menos 2 caracteres (ej: .com, .co)");
-    }
-
-    // 6. Validar contra patrones inválidos conocidos
-    const patronesInvalidos = [
-      /^[^@]+@[^@]{1,3}\.[^@]{1}$/, // h@g.c
-      /^[^@]+@[^@]{1,2}\.[^@]{2,}$/, // h@g.com
-      /^[^@]+@\.[^@]+$/, // usuario@.com
-      /^@[^@]+$/, // @dominio.com
-      /^[^@]+@$/, // usuario@
-    ];
-
-    if (patronesInvalidos.some(patron => patron.test(emailNormalizado))) {
-      errores.push("Formato de correo inválido");
-    }
-
-    // 7. Longitud máxima total
-    if (emailNormalizado.length > 254) {
-      errores.push("El correo es demasiado largo (máximo 254 caracteres)");
-    }
-
-    return errores;
-  };
-
-  // Validación en tiempo real del email
-  const validarEmailEnTiempoReal = (email) => {
-    if (!email) {
-      setErroresValidacion(prev => ({ ...prev, email: '' }));
-      return true;
-    }
-
-    const errores = validarEmailCompleto(email);
-    if (errores.length > 0) {
-      setErroresValidacion(prev => ({ ...prev, email: errores[0] }));
-      return false;
-    }
-
-    setErroresValidacion(prev => ({ ...prev, email: '' }));
-    return true;
-  };
-
-  // Validación de cédula
-  const validarCedula = (cedula) => {
-    const cedulaStr = String(cedula).trim();
-
-    if (!cedulaStr) {
-      setErroresValidacion(prev => ({ ...prev, cedula: 'La cédula es obligatoria' }));
-      return false;
-    }
-
-    if (!/^\d+$/.test(cedulaStr)) {
-      setErroresValidacion(prev => ({ ...prev, cedula: 'La cédula debe contener solo números' }));
-      return false;
-    }
-
-    if (cedulaStr.length < 7 || cedulaStr.length > 20) {
-      setErroresValidacion(prev => ({ ...prev, cedula: 'La cédula debe tener entre 7 y 20 dígitos' }));
-      return false;
-    }
-
-    setErroresValidacion(prev => ({ ...prev, cedula: '' }));
-    return true;
-  };
-
-  // Validación de nombre
-  const validarNombre = (nombre) => {
-    const nombreStr = nombre.trim();
-
-    if (!nombreStr) {
-      setErroresValidacion(prev => ({ ...prev, nombre: 'El nombre es obligatorio' }));
-      return false;
-    }
-
-    if (nombreStr.length < 3) {
-      setErroresValidacion(prev => ({ ...prev, nombre: 'El nombre debe tener al menos 3 caracteres' }));
-      return false;
-    }
-
-    if (nombreStr.length > 100) {
-      setErroresValidacion(prev => ({ ...prev, nombre: 'El nombre es demasiado largo' }));
-      return false;
-    }
-
-    // Permitir letras, espacios, tildes y ñ
-    if (!/^[a-zA-ZÀ-ÿ\u00f1\u00d1\s]+$/.test(nombreStr)) {
-      setErroresValidacion(prev => ({ ...prev, nombre: 'El nombre solo puede contener letras y espacios' }));
-      return false;
-    }
-
-    setErroresValidacion(prev => ({ ...prev, nombre: '' }));
-    return true;
-  };
-
-  // Validación de contraseña
-  const validarContrasena = (contrasena) => {
-    if (!contrasena) {
-      setErroresValidacion(prev => ({ ...prev, contrasena: 'La contraseña es obligatoria' }));
-      return false;
-    }
-
-    if (contrasena.length < 8) {
-      setErroresValidacion(prev => ({ ...prev, contrasena: 'La contraseña debe tener al menos 8 caracteres' }));
-      return false;
-    }
-
-    // Opcional: validar fortaleza de contraseña
-    const tieneMayuscula = /[A-Z]/.test(contrasena);
-    const tieneMinuscula = /[a-z]/.test(contrasena);
-    const tieneNumero = /\d/.test(contrasena);
-
-    if (!tieneMayuscula || !tieneMinuscula || !tieneNumero) {
-      setErroresValidacion(prev => ({ ...prev, contrasena: 'La contraseña debe incluir mayúsculas, minúsculas y números' }));
-      return false;
-    }
-
-    setErroresValidacion(prev => ({ ...prev, contrasena: '' }));
-    return true;
-  };
 
   // Función para mostrar modal de éxito
   const mostrarExito = (mensaje) => {
@@ -317,6 +96,20 @@ export const UsuariosPagina = () => {
     setModalAbierto(false);
   };
 
+  // Cargar roles asignables según el actor autenticado
+  useEffect(() => {
+    if (!puedeGestionarInstructores) return undefined;
+
+    leerRolesAsignables()
+      .then((roles) => setRolesAsignables(Array.isArray(roles) ? roles : []))
+      .catch((error) => {
+        logger.error('Error cargando roles asignables:', error);
+        mostrarError(error.response?.data?.error || error.message || 'No se pudieron cargar los roles asignables');
+      });
+
+    return undefined;
+  }, [puedeGestionarInstructores]);
+
   // Cargar FICHAS desde el backend
   useEffect(() => {
     if (seccionActiva === "fichas") {
@@ -328,169 +121,48 @@ export const UsuariosPagina = () => {
   }, [seccionActiva, cargarFichas]);
 
   const abrirModal = (usuario = null) => {
-    setModoEdicion(!!usuario);
-
-    const valoresPorDefecto = {
-      cedula: "",
-      nombre: "",
-      email: "",
-      contrasena: "",
-      id_rol: "2", // Mantener como string para el input
-      estado: 'Activo',
-    };
-
-    // Si estamos en modo edición, asegurarnos de mantener el ID y convertir el rol
-    const usuarioAEditar = usuario ? {
-      ...valoresPorDefecto,
-      ...usuario,
-      // Asegurar que el ID esté presente
-      id_instructor: usuario.id_instructor || usuario.id,
-      // Asegurar que id_rol sea string para el input
-      id_rol: String(usuario.id_rol || "2")
-    } : valoresPorDefecto;
-
-    logger.debug("🔄 Abriendo modal en modo:", modoEdicion ? "edición" : "creación");
-    logger.debug("📋 Datos del usuario para editar:", usuarioAEditar);
-
-    setFormUsuario(usuarioAEditar);
+    setUsuarioSeleccionado(usuario);
     setMostrarModal(true);
-
-    // Limpiar errores al abrir modal
-    setErroresValidacion({
-      email: '',
-      cedula: '',
-      nombre: '',
-      contrasena: ''
-    });
-  };
-  const cerrarModal = () => setMostrarModal(false);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormUsuario({ ...formUsuario, [name]: value });
-
-    // Validación en tiempo real
-    switch (name) {
-      case 'email':
-        validarEmailEnTiempoReal(value);
-        break;
-      case 'cedula':
-        validarCedula(value);
-        break;
-      case 'nombre':
-        validarNombre(value);
-        break;
-      case 'contrasena':
-        validarContrasena(value);
-        break;
-    }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const cerrarModal = () => {
+    setMostrarModal(false);
+    setUsuarioSeleccionado(null);
+  };
 
-    logger.debug("🔍 Iniciando submit del formulario");
+  const handleGuardarUsuario = async (usuarioNormalizado, modoEdicion) => {
+    const correo = usuarioNormalizado.email.trim().toLowerCase();
+    const cedula = String(usuarioNormalizado.cedula).trim();
 
-    // Validar todos los campos antes de proceder
-    const esEmailValido = validarEmailEnTiempoReal(formUsuario.email);
-    const esCedulaValida = validarCedula(formUsuario.cedula);
-    const esNombreValido = validarNombre(formUsuario.nombre);
-    const esContrasenaValida = modoEdicion ? true : validarContrasena(formUsuario.contrasena);
-
-    if (!esEmailValido || !esCedulaValida || !esNombreValido || !esContrasenaValida) {
-      mostrarError("Por favor, corrige los errores en el formulario antes de continuar.");
-      return;
-    }
-
-    // Normalizar datos
-    const correo = formUsuario.email.trim().toLowerCase();
-    const cedula = String(formUsuario.cedula).trim();
-
-    // IMPORTANTE: Normalizar el formUsuario antes de las validaciones
-    const usuarioNormalizado = {
-      ...formUsuario,
-      email: correo,
-      cedula: cedula,
-      id_rol: formUsuario.id_rol || "2",
-      estado: formUsuario.estado || 'Activo'
-    };
-
-    logger.debug("📤 Datos normalizados a enviar:", usuarioNormalizado);
-
-    // Validación final de correo (más estricta)
-    const erroresCorreo = validarEmailCompleto(correo);
-    if (erroresCorreo.length > 0) {
-      mostrarError(erroresCorreo[0]);
-      return;
-    }
-
-    // Validar correo duplicado - CORREGIDO
-    const correoExistente = usuarios.some(u => {
+    const correoExistente = usuarios.some((u) => {
       if (!u.email) return false;
-
-      // Comparar emails normalizados
-      const emailUsuarioExistente = u.email.toLowerCase().trim();
-      const emailNuevo = correo.toLowerCase().trim();
-
-      // Si estamos en modo edición, excluir al usuario actual
-      if (modoEdicion && u.id_instructor === usuarioNormalizado.id_instructor) {
-        return false;
-      }
-
-      return emailUsuarioExistente === emailNuevo;
+      if (modoEdicion && u.id_instructor === usuarioNormalizado.id_instructor) return false;
+      return u.email.toLowerCase().trim() === correo;
     });
 
     if (correoExistente) {
-      mostrarError("Este correo electrónico ya está registrado en el sistema.");
+      mostrarError('Este correo electrónico ya está registrado en el sistema.');
       return;
     }
 
-    // Validar cédula duplicada - CORREGIDO
-    const cedulaExistente = usuarios.some(u => {
+    const cedulaExistente = usuarios.some((u) => {
       if (!u.cedula) return false;
-
-      // Comparar cédulas como strings
-      const cedulaUsuarioExistente = String(u.cedula).trim();
-      const cedulaNueva = cedula.trim();
-
-      // Si estamos en modo edición, excluir al usuario actual
-      if (modoEdicion && u.id_instructor === usuarioNormalizado.id_instructor) {
-        return false;
-      }
-
-      return cedulaUsuarioExistente === cedulaNueva;
+      if (modoEdicion && u.id_instructor === usuarioNormalizado.id_instructor) return false;
+      return String(u.cedula).trim() === cedula;
     });
 
     if (cedulaExistente) {
-      mostrarError("Esta cédula ya está registrada en el sistema. Por favor, verifica el número.");
+      mostrarError('Esta cédula ya está registrada en el sistema. Por favor, verifica el número.');
       return;
     }
 
-    logger.debug("🎯 Modo edición:", modoEdicion);
-    logger.debug("✅ Todas las validaciones pasaron");
-
     try {
       await guardarUsuario(usuarioNormalizado, modoEdicion);
-      mostrarExito(modoEdicion ? "Instructor actualizado exitosamente" : "Instructor creado exitosamente");
+      mostrarExito(modoEdicion ? 'Instructor actualizado exitosamente' : 'Instructor creado exitosamente');
       cerrarModal();
-
     } catch (error) {
-      logger.error("❌ Error en handleSubmit:", error);
-
-      // Manejar errores específicos del backend
-      const errorMsg = error.message.toLowerCase();
-
-      if (errorMsg.includes("cédula") || errorMsg.includes("cedula")) {
-        mostrarError("Error: La cédula ya está registrada en el sistema.");
-      } else if (errorMsg.includes("correo") || errorMsg.includes("email") || errorMsg.includes("mail")) {
-        mostrarError("Error: El correo electrónico ya está registrado en el sistema.");
-      } else if (errorMsg.includes("contrasena") || errorMsg.includes("contraseña") || errorMsg.includes("password")) {
-        mostrarError("Error: La contraseña no cumple con los requisitos.");
-      } else if (errorMsg.includes("rol")) {
-        mostrarError("Error: El rol especificado no es válido.");
-      } else {
-        mostrarError("Error al guardar usuario: " + error.message);
-      }
+      logger.error('Error guardando instructor:', error);
+      mostrarError(error.message || 'Error al guardar usuario');
     }
   };
 
@@ -609,7 +281,7 @@ export const UsuariosPagina = () => {
                 </p>
               </div>
 
-              <button className="btn-crear" onClick={() => abrirModal()}>
+              <button className="btn-crear" onClick={() => abrirModal()} disabled={!puedeGestionarInstructores}>
                 <i className="fas fa-user-plus"></i> Crear Instructor
               </button>
             </div>
@@ -651,130 +323,13 @@ export const UsuariosPagina = () => {
               )}
             </div>
 
-            {mostrarModal && (
-              <div className="modal-overlay" onClick={cerrarModal}>
-                <div
-                  className="modal-contenido animate-modal"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <h3>{modoEdicion ? "Editar Instructor" : "Crear Nuevo Instructor"}</h3>
-                  <p className="descripcion-modal">
-                    {modoEdicion
-                      ? "Modifica los datos del instructor seleccionado."
-                      : "Completa los siguientes campos para registrar un nuevo instructor."}
-                  </p>
-
-                  <form className="form-modal" onSubmit={handleSubmit}>
-                    {/* Campo oculto para el ID en modo edición */}
-                    {modoEdicion && (
-                      <input
-                        type="hidden"
-                        name="id_instructor"
-                        value={formUsuario.id_instructor}
-                      />
-                    )}
-
-                    <label>Cédula*</label>
-                    <input
-                      type="text"
-                      name="cedula"
-                      placeholder="Número de cédula (7-20 dígitos)"
-                      value={formUsuario.cedula}
-                      onChange={(e) => {
-                        const soloNumeros = e.target.value.replace(/\D/g, "");
-                        if (soloNumeros.length <= 20) {
-                          handleChange({
-                            target: { name: "cedula", value: soloNumeros }
-                          });
-                        }
-                      }}
-                      minLength={7}
-                      maxLength={20}
-                      required
-                      className={erroresValidacion.cedula ? 'input-error' : ''}
-                    />
-                    {erroresValidacion.cedula && (
-                      <div className="mensaje-error">{erroresValidacion.cedula}</div>
-                    )}
-
-                    <label>Nombre Completo*</label>
-                    <input
-                      type="text"
-                      name="nombre"
-                      placeholder="Nombre completo (mínimo 3 letras)"
-                      value={formUsuario.nombre}
-                      onChange={(e) => {
-                        const soloLetras = e.target.value.replace(/[^a-zA-ZÀ-ÿ\u00f1\u00d1\s]/g, "");
-                        handleChange({
-                          target: { name: "nombre", value: soloLetras }
-                        });
-                      }}
-                      required
-                      className={erroresValidacion.nombre ? 'input-error' : ''}
-                    />
-                    {erroresValidacion.nombre && (
-                      <div className="mensaje-error">{erroresValidacion.nombre}</div>
-                    )}
-
-                    <label>Correo Electrónico*</label>
-                    <input
-                      type="email"
-                      name="email"
-                      placeholder="ejemplo@sena.edu.co"
-                      value={formUsuario.email}
-                      onChange={handleChange}
-                      required
-                      className={erroresValidacion.email ? 'input-error' : ''}
-                    />
-                    {erroresValidacion.email && (
-                      <div className="mensaje-error">{erroresValidacion.email}</div>
-                    )}
-                    <div className="sugerencia-correo">
-                      <small>Ejemplos válidos: nombre.apellido@sena.edu.co, usuario@dominio.com</small>
-                    </div>
-
-                    <>
-                      {/* Mostrar siempre el campo contraseña */}
-                      <label>Contraseña*</label>
-                      <input
-                        type="password"
-                        name="contrasena"
-                        placeholder="•••••••••• (mínimo 8 caracteres)"
-                        value={formUsuario.contrasena}
-                        onChange={handleChange}
-                        required
-                        minLength={8}
-                        className={erroresValidacion.contrasena ? 'input-error' : ''}
-                      />
-                      {erroresValidacion.contrasena && (
-                        <div className="mensaje-error">{erroresValidacion.contrasena}</div>
-                      )}
-                      <div className="sugerencia-contrasena">
-                        <small>Debe incluir mayúsculas, minúsculas y números</small>
-                      </div>
-                    </>
-
-                    <div className="acciones-modal">
-                      <button type="button" className="btn-cancelar" onClick={cerrarModal}>
-                        Cancelar
-                      </button>
-                      <button
-                        type="submit"
-                        className="btn-crear-usuario"
-                        disabled={
-                          Object.values(erroresValidacion).some(error => error !== '') ||
-                          !formUsuario.cedula ||
-                          !formUsuario.nombre ||
-                          !formUsuario.email ||
-                          (!modoEdicion && !formUsuario.contrasena)
-                        }
-                      >
-                        {modoEdicion ? "Guardar Cambios" : "Crear Instructor"}
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </div>
+            {mostrarModal && puedeGestionarInstructores && (
+              <ModalUsuario
+                onClose={cerrarModal}
+                onSave={handleGuardarUsuario}
+                usuarioSeleccionado={usuarioSeleccionado}
+                rolesAsignables={rolesAsignables}
+              />
             )}
           </>
         )}

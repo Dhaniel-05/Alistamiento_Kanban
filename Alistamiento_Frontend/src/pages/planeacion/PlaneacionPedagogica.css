@@ -247,6 +247,21 @@
   stroke: #8b5cf6;
 }
 
+.btn-icon.btn-exportar:hover {
+  background: #f0fdf4;
+  border-color: #16a34a;
+  color: #16a34a;
+}
+
+.btn-icon.btn-exportar:hover svg {
+  stroke: #16a34a;
+}
+
+.btn-icon.btn-exportar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .btn-icon.btn-eliminar {
   color: #ef4444;
   border-color: #fecaca;

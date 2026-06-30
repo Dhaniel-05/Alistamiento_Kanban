@@ -8,6 +8,17 @@ export const leerRoles = async () => {
   return res.data;
 };
 
+export const leerRolesAsignables = async () => {
+  try {
+    const res = await httpClient.get(`${ROLES_PATH}/asignables`);
+    return res.data;
+  } catch (error) {
+    const data = error.response?.data;
+    const mensaje = (typeof data === 'object' && data?.error) || error.message || 'Error al obtener roles asignables';
+    throw new Error(mensaje);
+  }
+};
+
 export const crearRol = async (rol) => {
   const res = await httpClient.post(ROLES_PATH, rol, { validateStatus: () => true });
   if (res.status < 200 || res.status >= 300) throw new Error('Error al crear rol');

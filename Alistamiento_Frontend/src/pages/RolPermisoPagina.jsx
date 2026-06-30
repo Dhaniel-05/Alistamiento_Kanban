@@ -29,12 +29,29 @@ export const RolPermisoPagina = () => {
   const fetchRolPermisos = async () => setRolPermisos(await leerRolPermisos());
 
   const handleSave = async ({ id_rol, permisos }) => {
-    for (const permisoId of permisos) {
-      await crearRolPermiso(id_rol, permisoId);
+    try {
+      const actuales = await leerPermisosDeRol(id_rol);
+      const actualesIds = new Set(actuales.map((p) => Number(p.id_permiso)));
+      const nuevosIds = new Set(permisos.map(Number));
+
+      for (const relacion of actuales) {
+        if (!nuevosIds.has(Number(relacion.id_permiso))) {
+          await eliminarRolPermiso(relacion.id_rol_permiso);
+        }
+      }
+
+      for (const permisoId of nuevosIds) {
+        if (!actualesIds.has(permisoId)) {
+          await crearRolPermiso(id_rol, permisoId);
+        }
+      }
+
+      await fetchRolPermisos();
+      setOpenModal(false);
+      setRelacionSeleccionada(null);
+    } catch (error) {
+      window.alert(error.message || 'Error al guardar permisos del rol');
     }
-    await fetchRolPermisos();
-    setOpenModal(false);
-    setRelacionSeleccionada(null);
   };
 
   const handleEdit = async (relacion) => {

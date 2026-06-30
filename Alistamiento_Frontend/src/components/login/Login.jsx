@@ -91,8 +91,11 @@ export const Login = () => {
         break;
 
       case "instructor":
-      case "gestor":
         navigate("/instructor");
+        break;
+
+      case "gestor":
+        navigate("/sabana");
         break;
 
       default:

@@ -189,13 +189,23 @@ INSERT INTO fases_configuracion (jornada, nombre_fase, orden, color) VALUES
     FOREIGN KEY (id_programa) REFERENCES programa_formacion (id_programa) ON DELETE SET NULL ON UPDATE CASCADE
     );
 
-    CREATE TABLE planeacion_pedagogica (
-    id_planeacion INT AUTO_INCREMENT PRIMARY KEY,
-    id_ficha INT, -- FK a Ficha
-    observaciones TEXT,
-    fecha_creacion DATE,
+    CREATE TABLE trimestre (
+    id_trimestre INT AUTO_INCREMENT PRIMARY KEY,
+    id_ficha INT, -- FK a fichas
+    no_trimestre INT,
+    fase VARCHAR(30),
     FOREIGN KEY (id_ficha) REFERENCES fichas (id_ficha) ON DELETE CASCADE ON UPDATE CASCADE
     );
+
+    CREATE TABLE planeacion_pedagogica (
+    id_planeacion INT AUTO_INCREMENT PRIMARY KEY,
+    id_ficha INT,
+    id_trimestre INT NULL,
+    observaciones TEXT,
+    fecha_creacion DATE,
+    FOREIGN KEY (id_ficha) REFERENCES fichas(id_ficha) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (id_trimestre) REFERENCES trimestre(id_trimestre) ON DELETE SET NULL ON UPDATE CASCADE
+);
 
     CREATE TABLE guia_aprendizaje (
     id_guia INT AUTO_INCREMENT PRIMARY KEY,
@@ -204,14 +214,6 @@ INSERT INTO fases_configuracion (jornada, nombre_fase, orden, color) VALUES
     version VARCHAR(10),
     fecha_creacion DATE,
     FOREIGN KEY (id_planeacion) REFERENCES planeacion_pedagogica (id_planeacion) ON DELETE CASCADE ON UPDATE CASCADE
-    );
-
-    CREATE TABLE trimestre (
-    id_trimestre INT AUTO_INCREMENT PRIMARY KEY,
-    id_ficha INT, -- FK a fichas
-    no_trimestre INT,
-    fase VARCHAR(30),
-    FOREIGN KEY (id_ficha) REFERENCES fichas (id_ficha) ON DELETE CASCADE ON UPDATE CASCADE
     );
 
     CREATE TABLE raps (

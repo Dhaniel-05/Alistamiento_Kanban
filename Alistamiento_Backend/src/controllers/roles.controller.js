@@ -1,7 +1,17 @@
 const db = require('../config/conexion_db');
 const logger = require('../config/logger');
+const rolService = require('../services/rol.service');
 
 class RolesController {
+  async obtenerRolesAsignables(req, res, next) {
+    try {
+      const roles = await rolService.obtenerAsignables(req.user.id);
+      res.json(roles);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async obtenerRoles(req, res) {
     try {
       const [roles] = await db.query(`

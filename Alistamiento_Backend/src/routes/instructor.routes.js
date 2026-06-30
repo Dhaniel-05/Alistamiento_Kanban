@@ -1,7 +1,7 @@
 const express = require('express');
 const InstructoresController = require('../controllers/instructores.controller');
 const autorizarRol = require('../middleware/autorizarRol');
-const { autorizarPropietarioORol } = require('../middleware/autorizarRol');
+const { autorizarPropietarioORol, autorizarPropietarioRolOPermiso } = require('../middleware/autorizarRol');
 const validate = require('../middleware/validate');
 const {
   createInstructorBodySchema,
@@ -16,6 +16,12 @@ const instructoresController = new InstructoresController();
 
 const soloAdminGestor = autorizarRol('Administrador', 'Gestor');
 const propietarioOAdminGestor = autorizarPropietarioORol('id', 'Administrador', 'Gestor');
+const lecturaInstructor = autorizarPropietarioRolOPermiso(
+  'id',
+  'instructor.leer',
+  'Administrador',
+  'Gestor',
+);
 
 router.get('/:id/fichas', validate(idParamSchema, 'params'), propietarioOAdminGestor, (req, res, next) =>
   instructoresController.obtenerFichasPorInstructor(req, res, next),
@@ -27,7 +33,7 @@ router.get('/', soloAdminGestor, (req, res, next) =>
 router.get('/email/:email', soloAdminGestor, validate(instructorEmailParamSchema, 'params'), (req, res, next) =>
   instructoresController.obtenerInstructorPorEmail(req, res, next),
 );
-router.get('/:id', validate(idParamSchema, 'params'), propietarioOAdminGestor, (req, res, next) =>
+router.get('/:id', validate(idParamSchema, 'params'), lecturaInstructor, (req, res, next) =>
   instructoresController.obtenerInstructorPorId(req, res, next),
 );
 router.post('/', soloAdminGestor, validate(createInstructorBodySchema, 'body'), (req, res, next) =>

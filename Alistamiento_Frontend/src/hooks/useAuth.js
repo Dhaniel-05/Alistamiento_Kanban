@@ -38,6 +38,7 @@ export const useAuth = () => {
       if (userData) {
         const userToStore = {
           ...userData,
+          permisos: Array.isArray(userData.permisos) ? [...userData.permisos] : [],
           primer_acceso: userData.primer_acceso !== undefined ? userData.primer_acceso : true,
         };
 

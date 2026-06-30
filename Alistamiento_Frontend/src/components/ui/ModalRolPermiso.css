@@ -5,29 +5,43 @@
     align-items: center;
     justify-content: center;
     background-color: rgba(0, 0, 0, 0.5);
+    padding: 1rem;
+    z-index: 1000;
 }
 
 .modal-contenedor {
     background-color: #fff;
-    padding: 2rem;
+    padding: 1.5rem;
     border-radius: 0.75rem;
-    width: 90%;
+    width: 100%;
     max-width: 30rem;
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);
+}
+
+.modal-contenedor.modal-rol-permiso {
+    max-width: 44rem;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .modal-titulo {
     font-size: 1.3rem;
     font-weight: bold;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
     text-align: center;
     color: #222;
+    flex-shrink: 0;
 }
 
 .modal-formulario {
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    min-height: 0;
+    flex: 1;
+    overflow: hidden;
 }
 
 .modal-select {
@@ -36,16 +50,34 @@
     border-radius: 0.5rem;
     font-size: 1rem;
     width: 100%;
+    flex-shrink: 0;
 }
 
 .modal-seccion {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    min-height: 0;
+    flex: 1;
+    overflow: hidden;
+}
+
+.modal-seccion-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-shrink: 0;
 }
 
 .modal-etiqueta {
     font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.modal-permisos-contador {
+    font-size: 0.8rem;
+    color: #6b7280;
 }
 
 .modal-lista-permisos {
@@ -54,27 +86,75 @@
     gap: 0.4rem;
 }
 
+.modal-lista-permisos--dos-columnas {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem 1rem;
+    max-height: min(50vh, 22rem);
+    overflow-y: auto;
+    padding: 0.25rem 0.5rem 0.25rem 0;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    background: #fafafa;
+}
+
 .modal-item-permiso {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 0.5rem;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    padding: 0.35rem 0.25rem;
+    border-radius: 0.35rem;
+    cursor: pointer;
+}
+
+.modal-item-permiso:hover {
+    background: #f3f4f6;
+}
+
+.modal-permiso-nombre {
+    display: block;
+    font-weight: 600;
+    color: #1f2937;
+    word-break: break-word;
+}
+
+.modal-permiso-descripcion {
+    display: block;
+    font-size: 0.78rem;
+    color: #6b7280;
+    line-height: 1.3;
 }
 
 .modal-checkbox {
-    transform: scale(1.2);
+    transform: scale(1.1);
     cursor: pointer;
+    margin-top: 0.15rem;
+    flex-shrink: 0;
+}
+
+.modal-checkbox:disabled {
+    cursor: not-allowed;
+}
+
+.modal-ayuda-rol {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #9ca3af;
+    font-style: italic;
 }
 
 .modal-acciones {
     display: flex;
     justify-content: flex-end;
     gap: 1rem;
+    flex-shrink: 0;
+    padding-top: 0.25rem;
 }
 
 .modal-boton-cancelar {
     padding: 0.4rem 1.2rem;
-    background-color: #c3ca3f; /* gris */
+    background-color: #c3ca3f;
     color: white;
     border: none;
     border-radius: 0.5rem;
@@ -87,7 +167,7 @@
 
 .modal-boton-guardar {
     padding: 0.6rem 1.2rem;
-    background-color: rgb(17, 161, 194); /* azul */
+    background-color: rgb(17, 161, 194);
     color: white;
     border: none;
     border-radius: 0.5rem;
@@ -95,15 +175,27 @@
     font-weight: bold;
 }
 
-.modal-boton-guardar:hover {
+.modal-boton-guardar:hover:not(:disabled) {
     background-color: #2a7b8a;
 }
 
-.modal-boton-guardar:active {
-    background-color: #3e8e41;
+.modal-boton-guardar:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 .modal-boton-cancelar:focus,
 .modal-boton-guardar:focus {
     outline: none;
+}
+
+@media (max-width: 640px) {
+    .modal-lista-permisos--dos-columnas {
+        grid-template-columns: 1fr;
+        max-height: 45vh;
+    }
+
+    .modal-contenedor.modal-rol-permiso {
+        max-width: 100%;
+    }
 }

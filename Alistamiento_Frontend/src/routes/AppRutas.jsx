@@ -1,45 +1,33 @@
-import { lazy, Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
-import { Home } from "../components/home/Home";
-import { Login } from "../components/login/Login";
-import { Principal } from "../pages/Principal";
-import { RolesPagina } from "../pages/RolesPagina";
-import { PermisosPagina } from "../pages/PermisosPagina";
-import { RolPermisoPagina } from "../pages/RolPermisoPagina";
-import { Bienvenido } from "../pages/Bienvenido";
-import { useAuthContext } from "../context/AuthContext";
-import { PageLoader } from "../components/common/PageLoader";
+import { lazy, Suspense } from 'react';
+import { Routes, Route } from 'react-router-dom';
+import { Home } from '../components/home/Home';
+import { Login } from '../components/login/Login';
+import { RolesPagina } from '../pages/RolesPagina';
+import { PermisosPagina } from '../pages/PermisosPagina';
+import { RolPermisoPagina } from '../pages/RolPermisoPagina';
+import { Bienvenido } from '../pages/Bienvenido';
+import { PrivateRoute } from './PrivateRoute';
+import { PageLoader } from '../components/common/PageLoader';
 
 const UsuariosPagina = lazy(() =>
-  import("../pages/UsuariosPagina").then((m) => ({ default: m.UsuariosPagina })),
+  import('../pages/UsuariosPagina').then((m) => ({ default: m.UsuariosPagina })),
 );
 const SabanaPagina = lazy(() =>
-  import("../pages/SabanaPagina").then((m) => ({ default: m.SabanaPagina })),
+  import('../pages/SabanaPagina').then((m) => ({ default: m.SabanaPagina })),
 );
 const PlaneacionPedagogica = lazy(() =>
-  import("../pages/planeacion/PlaneacionPedagogica").then((m) => ({ default: m.PlaneacionPedagogica })),
+  import('../pages/planeacion/PlaneacionPedagogica').then((m) => ({ default: m.PlaneacionPedagogica })),
 );
 const InstructorDashboard = lazy(() =>
-  import("../pages/instructor/InstructorDashboard").then((m) => ({ default: m.InstructorDashboard })),
+  import('../pages/instructor/InstructorDashboard').then((m) => ({ default: m.InstructorDashboard })),
 );
 const FasesConfiguracionPagina = lazy(() =>
-  import("../pages/FasesConfiguracionPagina").then((m) => ({ default: m.FasesConfiguracionPagina })),
+  import('../pages/FasesConfiguracionPagina').then((m) => ({ default: m.FasesConfiguracionPagina })),
 );
-
-const ADMIN_GESTOR_ROLES = ["Administrador", "Gestor"];
 
 const LazyPage = ({ children }) => (
   <Suspense fallback={<PageLoader />}>{children}</Suspense>
 );
-
-const PrivateRoute = ({ children, allowedRoles }) => {
-  const { user } = useAuthContext();
-
-  if (!user) return <Login />;
-  if (allowedRoles && !allowedRoles.includes(user.rol)) return <Bienvenido />;
-
-  return children;
-};
 
 export const AppRutas = () => (
   <Routes>
@@ -49,7 +37,7 @@ export const AppRutas = () => (
     <Route
       path="/instructor"
       element={
-        <PrivateRoute allowedRoles={["Instructor"]}>
+        <PrivateRoute allowedRoles={['Instructor']}>
           <LazyPage>
             <InstructorDashboard />
           </LazyPage>
@@ -60,7 +48,7 @@ export const AppRutas = () => (
     <Route
       path="/instructor/dashboard"
       element={
-        <PrivateRoute allowedRoles={["Instructor"]}>
+        <PrivateRoute allowedRoles={['Instructor']}>
           <LazyPage>
             <InstructorDashboard />
           </LazyPage>
@@ -71,16 +59,18 @@ export const AppRutas = () => (
     <Route
       path="/sabana/:idFicha"
       element={
-        <LazyPage>
-          <SabanaPagina />
-        </LazyPage>
+        <PrivateRoute permiso="ficha.leer">
+          <LazyPage>
+            <SabanaPagina />
+          </LazyPage>
+        </PrivateRoute>
       }
     />
 
     <Route
       path="/planeacion/:idFicha?"
       element={
-        <PrivateRoute allowedRoles={["Instructor"]}>
+        <PrivateRoute permiso="planeacion.gestionar">
           <LazyPage>
             <PlaneacionPedagogica />
           </LazyPage>
@@ -91,7 +81,7 @@ export const AppRutas = () => (
     <Route
       path="/principal"
       element={
-        <PrivateRoute allowedRoles={["Administrador"]}>
+        <PrivateRoute permiso="instructor.crear">
           <LazyPage>
             <UsuariosPagina />
           </LazyPage>
@@ -102,7 +92,7 @@ export const AppRutas = () => (
     <Route
       path="/usuarios"
       element={
-        <PrivateRoute allowedRoles={["Administrador"]}>
+        <PrivateRoute permiso="instructor.crear">
           <LazyPage>
             <UsuariosPagina />
           </LazyPage>
@@ -113,7 +103,7 @@ export const AppRutas = () => (
     <Route
       path="/roles"
       element={
-        <PrivateRoute allowedRoles={["Administrador"]}>
+        <PrivateRoute permiso="permiso.administrar">
           <RolesPagina />
         </PrivateRoute>
       }
@@ -122,7 +112,7 @@ export const AppRutas = () => (
     <Route
       path="/permisos"
       element={
-        <PrivateRoute allowedRoles={["Administrador"]}>
+        <PrivateRoute permiso="permiso.administrar">
           <PermisosPagina />
         </PrivateRoute>
       }
@@ -131,7 +121,7 @@ export const AppRutas = () => (
     <Route
       path="/rol-permisos"
       element={
-        <PrivateRoute allowedRoles={["Administrador"]}>
+        <PrivateRoute permiso="permiso.administrar">
           <RolPermisoPagina />
         </PrivateRoute>
       }
@@ -140,7 +130,7 @@ export const AppRutas = () => (
     <Route
       path="/sabana"
       element={
-        <PrivateRoute allowedRoles={["Instructor"]}>
+        <PrivateRoute permiso="ficha.leer">
           <LazyPage>
             <SabanaPagina />
           </LazyPage>
@@ -151,7 +141,7 @@ export const AppRutas = () => (
     <Route
       path="/fases-configuracion"
       element={
-        <PrivateRoute allowedRoles={ADMIN_GESTOR_ROLES}>
+        <PrivateRoute permiso="fase.gestionar">
           <LazyPage>
             <FasesConfiguracionPagina />
           </LazyPage>

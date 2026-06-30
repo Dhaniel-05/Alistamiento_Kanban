@@ -603,6 +603,123 @@ const obtenerDetallesPlaneacion = async (idPlaneacion) => {
     }
 };
 
+const extraerMensajeErrorHttp = (error, fallback) => {
+  const data = error?.response?.data;
+  if (typeof data === 'string' && data.trim()) return data;
+  if (data?.mensaje) return data.mensaje;
+  if (data?.message) return data.message;
+  if (error?.message) return error.message;
+  return fallback;
+};
+
+const extraerFilenameDeContentDisposition = (contentDisposition) => {
+  if (!contentDisposition) return null;
+
+  const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match?.[1]) {
+    return decodeURIComponent(utf8Match[1].trim());
+  }
+
+  const quotedMatch = contentDisposition.match(/filename="([^"]+)"/i);
+  if (quotedMatch?.[1]) {
+    return quotedMatch[1];
+  }
+
+  const plainMatch = contentDisposition.match(/filename=([^;]+)/i);
+  if (plainMatch?.[1]) {
+    return plainMatch[1].trim().replace(/^"|"$/g, '');
+  }
+
+  return null;
+};
+
+const extraerMensajeErrorBlob = async (blob) => {
+  const text = await blob.text();
+  if (!text.trim()) {
+    return 'No se pudo exportar la planeación a Excel';
+  }
+
+  try {
+    const json = JSON.parse(text);
+    return json.mensaje || json.message || text;
+  } catch {
+    return text;
+  }
+};
+
+const dispararDescargaBlob = (blob, filename) => {
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = objectUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(objectUrl);
+};
+
+// Exporta planeación a Excel (GFPI-F-134). Sin fallback mock; propaga error real del backend.
+const exportarPlaneacionExcel = async (idFicha, idTrimestre) => {
+  const params = { id_ficha: idFicha };
+  if (idTrimestre != null && idTrimestre !== '') {
+    params.id_trimestre = idTrimestre;
+  }
+
+  try {
+    logger.debug(`📤 Exportando planeación Excel ficha=${idFicha}, trimestre=${idTrimestre ?? 'N/A'}...`);
+    const response = await httpClient.get('/planeaciones/export/excel', {
+      params,
+      responseType: 'blob',
+    });
+
+    const blob = response.data;
+    if (!(blob instanceof Blob)) {
+      throw new Error('La respuesta del servidor no es un archivo válido');
+    }
+
+    const contentDisposition = response.headers['content-disposition'];
+    const filename = extraerFilenameDeContentDisposition(contentDisposition)
+      || `Planeacion_Ficha_${idFicha}.xlsx`;
+
+    dispararDescargaBlob(blob, filename);
+    logger.debug(`✅ Exportación Excel descargada: ${filename}`);
+  } catch (error) {
+    logger.error('❌ Error exportando planeación a Excel:', error);
+
+    const blobData = error?.response?.data;
+    if (blobData instanceof Blob) {
+      const mensaje = await extraerMensajeErrorBlob(blobData);
+      throw new Error(mensaje);
+    }
+
+    throw new Error(extraerMensajeErrorHttp(error, 'No se pudo exportar la planeación a Excel'));
+  }
+};
+
+// Obtiene una planeación con sus detalles (incluye id_detalle por fila). Sin fallback mock.
+const obtenerPlaneacionPorId = async (idPlaneacion) => {
+  try {
+    logger.debug(`📋 Obteniendo planeación ${idPlaneacion} con detalles...`);
+    const response = await httpClient.get(`/planeaciones/${idPlaneacion}`);
+    return response.data;
+  } catch (error) {
+    logger.error('❌ Error obteniendo planeación por id:', error);
+    throw new Error(extraerMensajeErrorHttp(error, 'No se pudo cargar la planeación'));
+  }
+};
+
+// Actualiza detalles de una planeación existente. Sin fallback mock; propaga error real.
+const editarPlaneacion = async (idPlaneacion, detalles) => {
+  try {
+    logger.debug(`✏️ Editando planeación ${idPlaneacion}...`);
+    const response = await httpClient.put(`/planeaciones/${idPlaneacion}`, { detalles });
+    return response.data;
+  } catch (error) {
+    logger.error('❌ Error editando planeación:', error);
+    throw new Error(extraerMensajeErrorHttp(error, 'No se pudo actualizar la planeación'));
+  }
+};
+
 // Función para eliminar planeación
 const eliminarPlaneacion = async (idPlaneacion) => {
     try {
@@ -662,8 +779,11 @@ export const planeacionService = {
     obtenerPlaneacionesLocales,
     obtenerPlaneaciones,
     obtenerPlaneacionesPorFicha,
+    obtenerPlaneacionPorId,
     obtenerDetallesPlaneacion,
+    editarPlaneacion,
     eliminarPlaneacion,
+    exportarPlaneacionExcel,
     verificarSaludBackend
 };
 

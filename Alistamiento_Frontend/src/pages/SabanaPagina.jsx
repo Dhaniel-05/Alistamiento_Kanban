@@ -142,6 +142,9 @@ export const SabanaPagina = () => {
     handleDesasignarRAP,
     obtenerNumeroTrimestres,
     handleIrAlDashboard,
+    handleSeleccionarFicha,
+    cargandoFichas,
+    fichasDisponibles,
   } = useSabana(idFicha, user);
 
   return (
@@ -158,10 +161,47 @@ export const SabanaPagina = () => {
                 <div className="sabana-seleccion-ficha">
                   <div className="seleccion-ficha-content">
                     <h2>Selecciona una Ficha</h2>
-                    <p>Para ver la sábana de una ficha, por favor selecciona una desde el dashboard del instructor.</p>
-                    <button type="button" className="btn-ir-dashboard" onClick={handleIrAlDashboard}>
-                      Ir al Dashboard
-                    </button>
+                    <p>Elige la ficha cuya sábana pedagógica deseas gestionar.</p>
+
+                    {cargandoFichas && (
+                      <p className="sabana-cargando-fichas">Cargando fichas...</p>
+                    )}
+
+                    {!cargandoFichas && fichasDisponibles.length === 0 && (
+                      <p className="sabana-sin-fichas">No hay fichas disponibles para tu usuario.</p>
+                    )}
+
+                    {!cargandoFichas && fichasDisponibles.length > 0 && (
+                      <div className="sabana-fichas-grid">
+                        {fichasDisponibles.map((ficha) => {
+                          const fichaId = ficha.id_ficha || ficha.id;
+                          return (
+                            <button
+                              key={fichaId}
+                              type="button"
+                              className="sabana-ficha-card"
+                              onClick={() => handleSeleccionarFicha(fichaId)}
+                            >
+                              <span className="sabana-ficha-codigo">
+                                {ficha.codigo_ficha || fichaId}
+                              </span>
+                              <span className="sabana-ficha-programa">
+                                {ficha.nombre_programa || ficha.programa || 'Programa no asignado'}
+                              </span>
+                              <span className="sabana-ficha-meta">
+                                {ficha.jornada || 'Jornada N/D'} · {ficha.modalidad || 'Modalidad N/D'}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {user?.rol === 'Instructor' && (
+                      <button type="button" className="btn-ir-dashboard" onClick={handleIrAlDashboard}>
+                        Ir al Dashboard
+                      </button>
+                    )}
                   </div>
                 </div>
               )}

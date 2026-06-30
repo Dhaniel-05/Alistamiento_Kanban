@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const AppError = require('../utils/AppError');
 const instructorRepository = require('../repositories/instructor.repository');
+const rolService = require('../services/rol.service');
 const { enviarCredenciales } = require('./emailService');
 
 const BCRYPT_ROUNDS = 10;
@@ -26,7 +27,13 @@ class InstructorService {
     return instructor;
   }
 
-  async create({ id_rol, nombre, email, contrasena, cedula, estado }) {
+  async create({ id_rol, nombre, email, contrasena, cedula, estado }, actor) {
+    if (!actor?.id) {
+      throw new AppError('Acceso denegado', 403, true, 'AUTH_REQUIRED');
+    }
+
+    await rolService.assertActorCanAssignRole(actor.id, id_rol);
+
     const cedulaDuplicada = await instructorRepository.existsByCedula(cedula);
     if (cedulaDuplicada) {
       throw new AppError('La cédula ya está registrada', 400);
@@ -55,7 +62,13 @@ class InstructorService {
     };
   }
 
-  async update(id, { cedula, nombre, email, contrasena, id_rol, estado }) {
+  async update(id, { cedula, nombre, email, contrasena, id_rol, estado }, actor) {
+    if (!actor?.id) {
+      throw new AppError('Acceso denegado', 403, true, 'AUTH_REQUIRED');
+    }
+
+    await rolService.assertActorCanAssignRole(actor.id, id_rol, id);
+
     const cedulaDuplicada = await instructorRepository.existsByCedulaExcluding(cedula, id);
     if (cedulaDuplicada) {
       throw new AppError('La cédula ya está registrada por otro instructor', 400);

@@ -20,23 +20,29 @@ export const leerRolPermisoPorId = async (id) => {
   return res.data;
 };
 
-export const crearRolPermiso = async (id_rol, permiso_id) => {
+export const crearRolPermiso = async (id_rol, id_permiso) => {
   const res = await httpClient.post(
     ROL_PERMISO_PATH,
-    { id_rol, permiso_id },
+    { id_rol, id_permiso },
     { validateStatus: () => true },
   );
-  if (res.status < 200 || res.status >= 300) throw new Error('Error al asignar permiso a rol');
+  if (res.status < 200 || res.status >= 300) {
+    const mensaje = res.data?.error || res.data?.mensaje || 'Error al asignar permiso a rol';
+    throw new Error(mensaje);
+  }
   return res.data;
 };
 
-export const actualizarRolPermiso = async (id, { id_rol, permiso_id }) => {
+export const actualizarRolPermiso = async (id, { id_rol, id_permiso }) => {
   const res = await httpClient.put(
     `${ROL_PERMISO_PATH}/${id}`,
-    { id_rol, permiso_id },
+    { id_rol, id_permiso },
     { validateStatus: () => true },
   );
-  if (res.status < 200 || res.status >= 300) throw new Error('Error al actualizar rol-permiso');
+  if (res.status < 200 || res.status >= 300) {
+    const mensaje = res.data?.error || res.data?.mensaje || 'Error al actualizar rol-permiso';
+    throw new Error(mensaje);
+  }
   return res.data;
 };
 

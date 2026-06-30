@@ -21,14 +21,18 @@ export const PermisosPagina = () => {
   const fetchPermisos = async () => setPermisos(await leerPermisos());
 
   const handleSavePermiso = async (permisoData) => {
-    if (permisoSeleccionado) {
-      await actualizarPermiso(permisoData.id_permiso, permisoData);
-    } else {
-      await crearPermiso(permisoData);
+    try {
+      if (permisoSeleccionado) {
+        await actualizarPermiso(permisoData.id_permiso, permisoData);
+      } else {
+        await crearPermiso(permisoData);
+      }
+      await fetchPermisos();
+      setOpenModal(false);
+      setPermisoSeleccionado(null);
+    } catch (error) {
+      window.alert(error.message || 'Error al guardar el permiso');
     }
-    await fetchPermisos();
-    setOpenModal(false);
-    setPermisoSeleccionado(null);
   };
 
   return (
@@ -61,7 +65,7 @@ export const PermisosPagina = () => {
                 <tr key={p.id_permiso}>
                   <td className="ocultar-columna">{p.id_permiso}</td>
                   <td>{p.nombre}</td>
-                  <td>{p.descripcion}</td>
+                  <td>{p.descripcion?.trim() || '—'}</td>
                   <td className="tabla-acciones">
                     <button
                       onClick={() => {

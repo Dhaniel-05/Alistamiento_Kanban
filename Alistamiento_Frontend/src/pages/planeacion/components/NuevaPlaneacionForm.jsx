@@ -9,7 +9,50 @@ import { ModalConfirmacion } from "../../../components/ui/ModalConfirmacion";
 import "./NuevaPlaneacionForm.css";
 import { obtenerInstructorPorRAP } from "../../../services/sabanaService";
 
-export const NuevaPlaneacionForm = ({ onCancel, onPlaneacionGuardada, idFicha, fichaInfo }) => {
+const mapDetalleARap = (detalle) => ({
+  id: detalle.id_rap,
+  id_detalle: detalle.id_detalle,
+  codigo: detalle.codigo_rap,
+  nombre: detalle.nombre_rap,
+  competencia: detalle.competencia,
+  horas_trimestre: detalle.horas_trimestre,
+  saberes_conceptos: detalle.saberes_conceptos,
+  saberes_proceso: detalle.saberes_proceso,
+  criterios_evaluacion: detalle.criterios_evaluacion,
+  instructor: null,
+  datos: {
+    fechaElaboracion: new Date().toISOString().split("T")[0],
+    actividadesAprendizaje: detalle.actividades_aprendizaje || "",
+    duracionDirecta: detalle.duracion_directa ?? "",
+    duracionIndependiente: detalle.duracion_independiente ?? "",
+    descripcionEvidencia: detalle.descripcion_evidencia || "",
+    estrategiasDidacticas: detalle.estrategias_didacticas || "",
+    ambientesAprendizaje: detalle.ambientes_aprendizaje || "",
+    materialesFormacion: detalle.materiales_formacion || "",
+    observaciones: detalle.observaciones || "",
+  },
+  expandido: true,
+});
+
+const evaluarCompletitudRap = (rap) => {
+  const datos = rap.datos;
+  return (
+    datos.actividadesAprendizaje.trim() !== "" &&
+    datos.descripcionEvidencia.trim() !== "" &&
+    datos.estrategiasDidacticas !== "" &&
+    datos.ambientesAprendizaje !== "" &&
+    datos.materialesFormacion.trim() !== ""
+  );
+};
+
+export const NuevaPlaneacionForm = ({
+  onCancel,
+  onPlaneacionGuardada,
+  idFicha,
+  fichaInfo,
+  modoEdicion = false,
+  planeacionInicial = null,
+}) => {
   const [trimestreSeleccionado, setTrimestreSeleccionado] = useState("");
   const [rapsAgregados, setRapsAgregados] = useState([]);
   const [rapsDisponibles, setRapsDisponibles] = useState([]);
@@ -89,6 +132,32 @@ export const NuevaPlaneacionForm = ({ onCancel, onPlaneacionGuardada, idFicha, f
 
     cargarDatos();
   }, [idFicha, fichaInfo]);
+
+  // Pre-cargar datos en modo edición (conserva id_detalle por fila para el PUT)
+  useEffect(() => {
+    if (!modoEdicion || !planeacionInicial?.detalles?.length) return;
+
+    const trimestre =
+      planeacionInicial.no_trimestre ??
+      planeacionInicial.trimestre ??
+      (() => {
+        const match = planeacionInicial.observaciones?.match(/Trimestre\s+(\d+)/i);
+        return match?.[1] ?? "";
+      })();
+
+    setTrimestreSeleccionado(String(trimestre));
+
+    const rapsMapeados = planeacionInicial.detalles.map(mapDetalleARap);
+    setRapsAgregados(rapsMapeados);
+    setRapsDisponibles(rapsMapeados);
+
+    const estadoInicial = {};
+    rapsMapeados.forEach((rap) => {
+      estadoInicial[rap.id] = evaluarCompletitudRap(rap);
+    });
+    setFormulariosCompletos(estadoInicial);
+    setErroresRap({});
+  }, [modoEdicion, planeacionInicial]);
 
   // Manejar cambio de trimestre
   const handleTrimestreChange = async (nuevoTrimestre) => {
@@ -379,6 +448,35 @@ export const NuevaPlaneacionForm = ({ onCancel, onPlaneacionGuardada, idFicha, f
     setCargando(true);
 
     try {
+      if (modoEdicion && planeacionInicial?.id_planeacion) {
+        const detalles = rapsAgregados.map((rap) => ({
+          id_detalle: rap.id_detalle,
+          actividades_aprendizaje: rap.datos.actividadesAprendizaje,
+          duracion_directa: parseInt(rap.datos.duracionDirecta, 10) || 0,
+          duracion_independiente: parseInt(rap.datos.duracionIndependiente, 10) || 0,
+          descripcion_evidencia: rap.datos.descripcionEvidencia,
+          estrategias_didacticas: rap.datos.estrategiasDidacticas,
+          ambientes_aprendizaje: rap.datos.ambientesAprendizaje,
+          materiales_formacion: rap.datos.materialesFormacion,
+          observaciones: rap.datos.observaciones,
+          saberes_conceptos: rap.saberes_conceptos,
+          saberes_proceso: rap.saberes_proceso,
+          criterios_evaluacion: rap.criterios_evaluacion,
+        }));
+
+        const resultado = await planeacionService.editarPlaneacion(
+          planeacionInicial.id_planeacion,
+          detalles,
+        );
+
+        setMensajeModal(
+          resultado.mensaje ||
+            `Planeación del trimestre ${trimestreSeleccionado} actualizada con ${rapsAgregados.length} RAP(s)`,
+        );
+        setMostrarModalExito(true);
+        return;
+      }
+
       const datosParaGuardar = {
         id_ficha: parseInt(idFicha),
         trimestre: parseInt(trimestreSeleccionado),
@@ -447,6 +545,10 @@ export const NuevaPlaneacionForm = ({ onCancel, onPlaneacionGuardada, idFicha, f
   // Funciones para manejar modales
   const handleCierreModalExito = () => {
     setMostrarModalExito(false);
+    if (modoEdicion) {
+      onPlaneacionGuardada();
+      return;
+    }
     setMensajeModal("¿Quieres crear otra planeación o volver al listado?");
     setMostrarModalConfirmacion(true);
   };
@@ -479,7 +581,7 @@ export const NuevaPlaneacionForm = ({ onCancel, onPlaneacionGuardada, idFicha, f
     nombre: `Trimestre ${i + 1}`,
   }));
 
-  if (cargando && !trimestreSeleccionado) {
+  if ((cargando && !trimestreSeleccionado && !modoEdicion) || (modoEdicion && !planeacionInicial)) {
     return (
       <div className="cargando-datos">
         <div className="spinner"></div>
@@ -544,7 +646,9 @@ export const NuevaPlaneacionForm = ({ onCancel, onPlaneacionGuardada, idFicha, f
           Volver a Lista
         </button>
         <div className="header-info">
-          <h1 className="header-title">Nueva Planeación Pedagógica</h1>
+          <h1 className="header-title">
+            {modoEdicion ? "Editar Planeación Pedagógica" : "Nueva Planeación Pedagógica"}
+          </h1>
           <div className="header-subtitle">
             Ficha: {infoFicha?.ficha?.codigo_ficha || idFicha} | Programa:{" "}
             {infoFicha?.programa?.nombre_programa || "No asignado"}
@@ -566,7 +670,7 @@ export const NuevaPlaneacionForm = ({ onCancel, onPlaneacionGuardada, idFicha, f
             <polyline points="17 21 17 13 7 13 7 21" />
             <polyline points="7 3 7 8 15 8" />
           </svg>
-          {cargando ? "Guardando..." : "Guardar"}
+          {cargando ? "Guardando..." : modoEdicion ? "Guardar cambios" : "Guardar"}
         </button>
       </div>
 
@@ -578,7 +682,9 @@ export const NuevaPlaneacionForm = ({ onCancel, onPlaneacionGuardada, idFicha, f
             <div>
               <h2 className="section-title-inline">Configuración Inicial</h2>
               <p className="section-description-inline">
-                Selecciona el trimestre para generar la planeación. Los RAPs se cargarán automáticamente.
+                {modoEdicion
+                  ? "El trimestre no se puede modificar al editar. Actualiza los campos de cada RAP."
+                  : "Selecciona el trimestre para generar la planeación. Los RAPs se cargarán automáticamente."}
               </p>
             </div>
           </div>
@@ -591,7 +697,7 @@ export const NuevaPlaneacionForm = ({ onCancel, onPlaneacionGuardada, idFicha, f
                 onChange={(e) => handleTrimestreChange(e.target.value)}
                 className="campo-select-block"
                 required
-                disabled={cargando}
+                disabled={cargando || modoEdicion}
               >
                 <option value="">Seleccionar trimestre</option>
                 {trimestresDisponibles.map((trimestre) => (

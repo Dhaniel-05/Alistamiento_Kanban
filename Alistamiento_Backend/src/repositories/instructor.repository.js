@@ -5,6 +5,7 @@ const INSTRUCTOR_LIST_PROJECTION = `
   i.cedula,
   i.nombre,
   i.email,
+  i.id_rol,
   r.nombre AS rol,
   COALESCE(GROUP_CONCAT(p.nombre ORDER BY p.id_permiso SEPARATOR ', '), 'Sin Permisos') AS permisos
 `;
@@ -26,7 +27,7 @@ class InstructorRepository {
     let sql = `
       SELECT ${INSTRUCTOR_LIST_PROJECTION}
       ${INSTRUCTOR_FROM_JOINS}
-      GROUP BY i.id_instructor, i.cedula, i.nombre, i.email, r.nombre
+      GROUP BY i.id_instructor, i.cedula, i.nombre, i.email, i.id_rol, r.nombre
     `;
     const params = [];
 

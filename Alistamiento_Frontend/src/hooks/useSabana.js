@@ -10,6 +10,7 @@ import {
   asignarInstructor,
   desasignarInstructor,
 } from '../services/sabanaService';
+import { leerFichasPorInstructor } from '../services/instructorService';
 import httpClient from '../services/httpClient';
 
 export function useSabana(idFicha, user) {
@@ -34,6 +35,41 @@ export function useSabana(idFicha, user) {
 
   const [rapCopiado, setRapCopiado] = useState(null);
   const [modoCopiar, setModoCopiar] = useState(false);
+  const [fichasDisponibles, setFichasDisponibles] = useState([]);
+  const [cargandoFichas, setCargandoFichas] = useState(false);
+
+  useEffect(() => {
+    if (fichaSeleccionada) {
+      return undefined;
+    }
+
+    const cargarFichasDisponibles = async () => {
+      setCargandoFichas(true);
+      setError(null);
+
+      try {
+        let data = [];
+
+        if (user?.rol === 'Instructor' && user?.id) {
+          data = await leerFichasPorInstructor(user.id);
+        } else {
+          const response = await httpClient.get('/fichas/todas');
+          data = response.data;
+        }
+
+        setFichasDisponibles(Array.isArray(data) ? data : []);
+      } catch (err) {
+        logger.error('Error cargando fichas para sábana:', err);
+        setFichasDisponibles([]);
+        setError('No se pudieron cargar las fichas disponibles.');
+      } finally {
+        setCargandoFichas(false);
+      }
+    };
+
+    cargarFichasDisponibles();
+    return undefined;
+  }, [fichaSeleccionada, user]);
 
   useEffect(() => {
     if (fichaSeleccionada) {
@@ -530,12 +566,26 @@ export function useSabana(idFicha, user) {
   };
 
   const handleIrAlDashboard = () => {
-    navigate("/instructor");
+    if (user?.rol === 'Instructor') {
+      navigate('/instructor');
+      return;
+    }
+    if (user?.rol === 'Gestor') {
+      navigate('/sabana');
+      return;
+    }
+    navigate('/principal');
+  };
+
+  const handleSeleccionarFicha = (id) => {
+    navigate(`/sabana/${id}`);
   };
 
   return {
     user,
     fichaSeleccionada,
+    fichasDisponibles,
+    cargandoFichas,
     sabana,
     cargando,
     error,
@@ -560,5 +610,6 @@ export function useSabana(idFicha, user) {
     handleDesasignarRAP,
     obtenerNumeroTrimestres,
     handleIrAlDashboard,
+    handleSeleccionarFicha,
   };
 }

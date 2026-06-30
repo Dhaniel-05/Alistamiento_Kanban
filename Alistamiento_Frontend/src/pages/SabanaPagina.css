@@ -625,7 +625,56 @@
 
 .seleccion-ficha-content {
   text-align: center;
-  max-width: 500px;
+  max-width: 720px;
+  width: 100%;
+}
+
+.sabana-fichas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+  text-align: left;
+}
+
+.sabana-ficha-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1rem;
+  border: 1px solid #dbe3ea;
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.sabana-ficha-card:hover {
+  border-color: #11a1c2;
+  box-shadow: 0 4px 12px rgba(17, 161, 194, 0.15);
+}
+
+.sabana-ficha-codigo {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.sabana-ficha-programa {
+  font-size: 0.9rem;
+  color: #374151;
+  line-height: 1.35;
+}
+
+.sabana-ficha-meta {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.sabana-cargando-fichas,
+.sabana-sin-fichas {
+  margin: 1rem 0;
+  color: #6b7280;
 }
 
 .seleccion-ficha-content h2 {

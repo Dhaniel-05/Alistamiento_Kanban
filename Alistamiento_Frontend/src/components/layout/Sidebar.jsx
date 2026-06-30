@@ -1,9 +1,14 @@
 import { useState, useEffect } from 'react';
 import { logger } from '../../utils/logger';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuthContext } from '../../context/AuthContext';
+import { tienePermiso } from '../../utils/permisos';
 import './Sidebar.css';
 
 export const Sidebar = ({ fichaInfo }) => {
+  const { user } = useAuthContext();
+  const puedeVerSabana = tienePermiso(user, 'ficha.leer');
+  const puedeVerPlaneacion = tienePermiso(user, 'planeacion.gestionar');
   const [activeSection, setActiveSection] = useState('sabana');
   const navigate = useNavigate();
   const location = useLocation();
@@ -78,6 +83,7 @@ export const Sidebar = ({ fichaInfo }) => {
     <aside className="sidebar">
       {/* Navegación Principal */}
       <nav className="sidebar-nav">
+        {puedeVerSabana && (
         <div 
           className={`nav-item ${activeSection === 'sabana' ? 'active' : ''}`}
           onClick={() => handleNavigation('sabana')}
@@ -88,7 +94,9 @@ export const Sidebar = ({ fichaInfo }) => {
           </svg>
           <span className="nav-text">Sábana</span>
         </div>
+        )}
 
+        {puedeVerPlaneacion && (
         <div 
           className={`nav-item ${activeSection === 'planeacion' ? 'active' : ''}`}
           onClick={() => handleNavigation('planeacion')}
@@ -98,6 +106,7 @@ export const Sidebar = ({ fichaInfo }) => {
           </svg>
           <span className="nav-text">Planeación Pedagógica</span>
         </div>
+        )}
       </nav>
 
       {/* Información de la Ficha */}

@@ -1,42 +1,46 @@
-import { NavLink } from "react-router-dom";
-import { useAuthContext } from "../../context/AuthContext";
-import "./Navbar.css";
+import { NavLink } from 'react-router-dom';
+import { useAuthContext } from '../../context/AuthContext';
+import { tienePermiso } from '../../utils/permisos';
+import './Navbar.css';
 
-const ADMIN_GESTOR_ROLES = ["Administrador", "Gestor"];
+const linkClass = ({ isActive }) => `nav-link${isActive ? ' active' : ''}`;
 
 export const Navbar = () => {
   const { user } = useAuthContext();
 
-  if (!user || !ADMIN_GESTOR_ROLES.includes(user.rol)) {
+  const puedeVerUsuarios = tienePermiso(user, 'instructor.crear');
+  const puedeAdministrarPermisos = tienePermiso(user, 'permiso.administrar');
+  const puedeGestionarFases = tienePermiso(user, 'fase.gestionar');
+
+  if (!user || (!puedeVerUsuarios && !puedeAdministrarPermisos && !puedeGestionarFases)) {
     return null;
   }
 
-  const esAdministrador = user.rol === "Administrador";
-
   return (
     <nav className="header-nav">
-      {esAdministrador && (
+      {puedeVerUsuarios && (
+        <NavLink to="/usuarios" className={linkClass}>
+          Usuarios
+        </NavLink>
+      )}
+      {puedeAdministrarPermisos && (
         <>
-          <NavLink to="/usuarios" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
-            Usuarios
-          </NavLink>
-          <NavLink to="/roles" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
+          <NavLink to="/roles" className={linkClass}>
             Roles
           </NavLink>
-          <NavLink to="/permisos" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
+          <NavLink to="/permisos" className={linkClass}>
             Permisos
           </NavLink>
-          <NavLink to="/rol-permisos" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
+          <NavLink to="/rol-permisos" className={linkClass}>
             Rol-Permisos
           </NavLink>
         </>
       )}
-      <NavLink
-        to="/fases-configuracion"
-        className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}
-      >
-        Config. Fases
-      </NavLink>
+      {puedeGestionarFases && (
+        <NavLink to="/fases-configuracion" className={linkClass}>
+          Config. Fases
+        </NavLink>
+      )}
     </nav>
   );
 };
