@@ -29,6 +29,14 @@ const LazyPage = ({ children }) => (
   <Suspense fallback={<PageLoader />}>{children}</Suspense>
 );
 
+const PERMISOS_PANEL_USUARIOS = [
+  'instructor.crear',
+  'programa.leer',
+  'ficha.leer',
+  'permiso.administrar',
+  'fase.gestionar',
+];
+
 export const AppRutas = () => (
   <Routes>
     <Route path="/" element={<Home />} />
@@ -81,7 +89,7 @@ export const AppRutas = () => (
     <Route
       path="/principal"
       element={
-        <PrivateRoute permiso="instructor.crear">
+        <PrivateRoute permisos={PERMISOS_PANEL_USUARIOS}>
           <LazyPage>
             <UsuariosPagina />
           </LazyPage>
@@ -92,7 +100,7 @@ export const AppRutas = () => (
     <Route
       path="/usuarios"
       element={
-        <PrivateRoute permiso="instructor.crear">
+        <PrivateRoute permisos={PERMISOS_PANEL_USUARIOS}>
           <LazyPage>
             <UsuariosPagina />
           </LazyPage>

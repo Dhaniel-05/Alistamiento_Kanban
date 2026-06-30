@@ -3,6 +3,7 @@ const config = require('../config/env');
 const logger = require('../config/logger');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const authService = require('../services/auth.service');
 const { DUMMY_BCRYPT_HASH, INVALID_CREDENTIALS_RESPONSE } = require('../utils/authLogin.constants');
 
 class AuthController {
@@ -76,6 +77,18 @@ class AuthController {
     } catch (error) {
       logger.error('Error en login', { stack: error.stack });
       res.status(500).json({ error: 'Error del servidor' });
+    }
+  }
+
+  async me(req, res, next) {
+    try {
+      const instructor = await authService.obtenerSesionVigente(req.user.id);
+      res.json({
+        mensaje: 'Sesión vigente',
+        instructor,
+      });
+    } catch (error) {
+      next(error);
     }
   }
 }

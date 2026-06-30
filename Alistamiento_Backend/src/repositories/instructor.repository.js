@@ -95,6 +95,56 @@ class InstructorRepository {
     return rows[0] ?? null;
   }
 
+  async findPermisoNombresByInstructorId(idInstructor) {
+    const [rows] = await db.query(
+      `SELECT p.nombre
+       FROM instructores i
+       JOIN roles_permisos rp ON rp.id_rol = i.id_rol
+       JOIN permisos p ON p.id_permiso = rp.id_permiso
+       WHERE i.id_instructor = ?
+       ORDER BY p.nombre`,
+      [idInstructor],
+    );
+    return rows.map((row) => row.nombre);
+  }
+
+  /** Perfil de sesión con permisos vigentes desde roles_permisos (sin datos sensibles). */
+  async findSessionById(idInstructor) {
+    const [rows] = await db.query(
+      `SELECT
+        i.id_instructor,
+        i.nombre,
+        i.email,
+        i.cedula,
+        i.id_rol,
+        i.primer_acceso,
+        r.nombre AS rol
+       FROM instructores i
+       LEFT JOIN roles r ON i.id_rol = r.id_rol
+       WHERE i.id_instructor = ?`,
+      [idInstructor],
+    );
+
+    const instructor = rows[0];
+    if (!instructor) {
+      return null;
+    }
+
+    const permisos = await this.findPermisoNombresByInstructorId(idInstructor);
+
+    return {
+      id: instructor.id_instructor,
+      nombre: instructor.nombre,
+      email: instructor.email,
+      cedula: instructor.cedula,
+      rol: instructor.rol || 'Sin rol',
+      permisos,
+      primer_acceso: instructor.primer_acceso === undefined
+        ? true
+        : instructor.primer_acceso === 1 || instructor.primer_acceso === true,
+    };
+  }
+
   async existsByCedula(cedula) {
     const [rows] = await db.query(
       'SELECT id_instructor FROM instructores WHERE cedula = ? LIMIT 1',

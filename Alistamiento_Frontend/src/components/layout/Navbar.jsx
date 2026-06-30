@@ -1,46 +1,32 @@
 import { NavLink } from 'react-router-dom';
 import { useAuthContext } from '../../context/AuthContext';
-import { tienePermiso } from '../../utils/permisos';
+import { tieneAlguno } from '../../utils/permisos';
 import './Navbar.css';
 
 const linkClass = ({ isActive }) => `nav-link${isActive ? ' active' : ''}`;
 
+const PERMISOS_PANEL = [
+  'instructor.crear',
+  'programa.leer',
+  'ficha.leer',
+  'permiso.administrar',
+  'fase.gestionar',
+];
+
 export const Navbar = () => {
   const { user } = useAuthContext();
 
-  const puedeVerUsuarios = tienePermiso(user, 'instructor.crear');
-  const puedeAdministrarPermisos = tienePermiso(user, 'permiso.administrar');
-  const puedeGestionarFases = tienePermiso(user, 'fase.gestionar');
+  const puedeVerPanel = tieneAlguno(user, PERMISOS_PANEL);
 
-  if (!user || (!puedeVerUsuarios && !puedeAdministrarPermisos && !puedeGestionarFases)) {
+  if (!user || !puedeVerPanel) {
     return null;
   }
 
   return (
     <nav className="header-nav">
-      {puedeVerUsuarios && (
-        <NavLink to="/usuarios" className={linkClass}>
-          Usuarios
-        </NavLink>
-      )}
-      {puedeAdministrarPermisos && (
-        <>
-          <NavLink to="/roles" className={linkClass}>
-            Roles
-          </NavLink>
-          <NavLink to="/permisos" className={linkClass}>
-            Permisos
-          </NavLink>
-          <NavLink to="/rol-permisos" className={linkClass}>
-            Rol-Permisos
-          </NavLink>
-        </>
-      )}
-      {puedeGestionarFases && (
-        <NavLink to="/fases-configuracion" className={linkClass}>
-          Config. Fases
-        </NavLink>
-      )}
+      <NavLink to="/usuarios" className={linkClass}>
+        Panel de gestión
+      </NavLink>
     </nav>
   );
 };

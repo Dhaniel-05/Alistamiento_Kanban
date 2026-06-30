@@ -1,4 +1,5 @@
 const AppError = require('../utils/AppError');
+const autorizarPermiso = require('./autorizarPermiso');
 
 const ROLES = Object.freeze({
   ADMIN: 'Administrador',
@@ -45,6 +46,22 @@ function autorizarPropietarioORol(paramName, ...rolesPermitidos) {
 }
 
 /**
+ * Propietario del recurso o permiso indicado (consulta BD vía autorizarPermiso).
+ */
+function autorizarPropietarioOPermiso(paramName, permiso) {
+  return (req, res, next) => {
+    const resourceId = Number(req.params[paramName]);
+    const userId = Number(req.user?.id);
+
+    if (Number.isFinite(resourceId) && Number.isFinite(userId) && resourceId === userId) {
+      return next();
+    }
+
+    return autorizarPermiso(permiso)(req, res, next);
+  };
+}
+
+/**
  * Propietario del recurso, roles privilegiados o permiso de lectura (p. ej. instructor.leer).
  */
 function autorizarPropietarioRolOPermiso(paramName, permiso, ...rolesPermitidos) {
@@ -67,5 +84,6 @@ function autorizarPropietarioRolOPermiso(paramName, permiso, ...rolesPermitidos)
 
 module.exports = autorizarRol;
 module.exports.autorizarPropietarioORol = autorizarPropietarioORol;
+module.exports.autorizarPropietarioOPermiso = autorizarPropietarioOPermiso;
 module.exports.autorizarPropietarioRolOPermiso = autorizarPropietarioRolOPermiso;
 module.exports.ROLES = ROLES;

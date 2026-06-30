@@ -1,7 +1,7 @@
 const express = require('express');
 const InstructoresController = require('../controllers/instructores.controller');
-const autorizarRol = require('../middleware/autorizarRol');
-const { autorizarPropietarioORol, autorizarPropietarioRolOPermiso } = require('../middleware/autorizarRol');
+const autorizarPermiso = require('../middleware/autorizarPermiso');
+const { autorizarPropietarioOPermiso } = require('../middleware/autorizarRol');
 const validate = require('../middleware/validate');
 const {
   createInstructorBodySchema,
@@ -14,38 +14,46 @@ const {
 const router = express.Router();
 const instructoresController = new InstructoresController();
 
-const soloAdminGestor = autorizarRol('Administrador', 'Gestor');
-const propietarioOAdminGestor = autorizarPropietarioORol('id', 'Administrador', 'Gestor');
-const lecturaInstructor = autorizarPropietarioRolOPermiso(
-  'id',
-  'instructor.leer',
-  'Administrador',
-  'Gestor',
+const propietarioOEditor = autorizarPropietarioOPermiso('id', 'instructor.editar');
+const lecturaInstructor = autorizarPropietarioOPermiso('id', 'instructor.leer');
+
+router.get(
+  '/:id/fichas',
+  validate(idParamSchema, 'params'),
+  autorizarPropietarioOPermiso('id', 'ficha.leer'),
+  (req, res, next) => instructoresController.obtenerFichasPorInstructor(req, res, next),
 );
 
-router.get('/:id/fichas', validate(idParamSchema, 'params'), propietarioOAdminGestor, (req, res, next) =>
-  instructoresController.obtenerFichasPorInstructor(req, res, next),
-);
-
-router.get('/', soloAdminGestor, (req, res, next) =>
+router.get('/', autorizarPermiso('instructor.leer'), (req, res, next) =>
   instructoresController.obtenerInstructores(req, res, next),
 );
-router.get('/email/:email', soloAdminGestor, validate(instructorEmailParamSchema, 'params'), (req, res, next) =>
-  instructoresController.obtenerInstructorPorEmail(req, res, next),
+router.get(
+  '/email/:email',
+  autorizarPermiso('instructor.leer'),
+  validate(instructorEmailParamSchema, 'params'),
+  (req, res, next) => instructoresController.obtenerInstructorPorEmail(req, res, next),
 );
 router.get('/:id', validate(idParamSchema, 'params'), lecturaInstructor, (req, res, next) =>
   instructoresController.obtenerInstructorPorId(req, res, next),
 );
-router.post('/', soloAdminGestor, validate(createInstructorBodySchema, 'body'), (req, res, next) =>
+router.post('/', autorizarPermiso('instructor.crear'), validate(createInstructorBodySchema, 'body'), (req, res, next) =>
   instructoresController.agregarInstructor(req, res, next),
 );
-router.put('/:id', validate(idParamSchema, 'params'), validate(updateInstructorBodySchema, 'body'), propietarioOAdminGestor, (req, res, next) =>
-  instructoresController.actualizarInstructor(req, res, next),
+router.put(
+  '/:id',
+  validate(idParamSchema, 'params'),
+  validate(updateInstructorBodySchema, 'body'),
+  propietarioOEditor,
+  (req, res, next) => instructoresController.actualizarInstructor(req, res, next),
 );
-router.put('/:id/cambiar-contrasena', validate(idParamSchema, 'params'), validate(cambiarContrasenaBodySchema, 'body'), propietarioOAdminGestor, (req, res, next) =>
-  instructoresController.cambiarContrasena(req, res, next),
+router.put(
+  '/:id/cambiar-contrasena',
+  validate(idParamSchema, 'params'),
+  validate(cambiarContrasenaBodySchema, 'body'),
+  propietarioOEditor,
+  (req, res, next) => instructoresController.cambiarContrasena(req, res, next),
 );
-router.delete('/:id', soloAdminGestor, validate(idParamSchema, 'params'), (req, res, next) =>
+router.delete('/:id', autorizarPermiso('instructor.eliminar'), validate(idParamSchema, 'params'), (req, res, next) =>
   instructoresController.eliminarInstructor(req, res, next),
 );
 

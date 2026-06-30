@@ -11,3 +11,8 @@ export const loginRequest = async (credentials) => {
     throw new Error(message);
   }
 };
+
+export const fetchSessionMe = async () => {
+  const response = await httpClient.get('/auth/me');
+  return response.data;
+};

@@ -11,7 +11,8 @@ export const AuthProvider = ({ children }) => {
         user: null,
         token: null,
         login: async () => false,
-        logout: () => {}
+        logout: () => {},
+        refreshPermissions: async () => {},
     };
 
     return <AuthContext.Provider value={authValue}>{children}</AuthContext.Provider>;

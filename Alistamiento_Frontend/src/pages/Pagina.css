@@ -296,6 +296,7 @@
 .menu-secciones-animadas {
   display: flex;
   justify-content: center;
+  flex-wrap: wrap;
   background-color: #f3f4f6;
   border-radius: 9999px;
   padding: 0.25rem; /* 🔸 más delgado */
@@ -396,40 +397,162 @@
   cursor: not-allowed;
 }
 
-/* Botones de acción */
-.boton-editar {
-  background-color: #17a2b8;
-  color: white;
+/* Botones de acción en tablas: iconos neutros (sin botones azul/rojo) */
+.tabla-acciones {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tabla-acciones .btn-editar,
+.tabla-acciones .btn-eliminar {
   border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
+  background: none;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 1.1rem;
+  color: #6b7280;
+  padding: 0.25rem;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.tabla-acciones .btn-editar:hover,
+.tabla-acciones .btn-eliminar:hover {
+  color: #111827;
+  transform: scale(1.15);
+}
+
+/* Tablas del panel */
+.tabla-contenedor {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.tabla th,
+.tabla td {
+  padding: 0.85rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+  color: #111827;
+}
+
+.tabla th {
+  background: #f9fafb;
+  font-weight: 600;
+  color: #111827;
+}
+
+.tabla tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.tabla tbody tr:hover {
+  background: #f9fafb;
+}
+
+.tabla td {
+  color: #374151;
+}
+
+.ocultar-columna {
+  display: none;
+}
+
+/* Sub-pestañas dentro de Gestión de Permisos */
+.panel-seccion {
+  animation: tabActivate 0.25s ease;
+}
+
+.sub-menu-secciones {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+}
+
+.sub-menu-secciones .sub-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.75rem 1.25rem;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  white-space: nowrap;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.sub-menu-secciones .sub-tab:hover {
+  color: #111827;
+}
+
+.sub-menu-secciones .sub-tab.activo {
+  color: #111827;
+  border-bottom-color: #111827;
+}
+
+/* Filtros fases */
+.fases-config-panel .fases-config-filtros {
+  margin-bottom: 1.25rem;
+}
+
+.filtro-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #6b7280;
+  margin-bottom: 0.35rem;
+}
+
+.filtro-select {
+  min-width: 220px;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #111827;
+  font-size: 0.95rem;
+}
+
+.filtro-select:focus {
+  outline: none;
+  border-color: #111827;
+}
+
+.fase-color-swatch {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: 1px solid #e5e7eb;
+  vertical-align: middle;
   margin-right: 8px;
 }
 
-.boton-editar:hover:not(:disabled) {
-  background-color: #138496;
+.fase-color-code {
+  font-size: 0.85rem;
+  color: #6b7280;
+  vertical-align: middle;
 }
 
-.boton-eliminar {
-  background-color: #dc3545;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 13px;
-}
-
-.boton-eliminar:hover:not(:disabled) {
-  background-color: #c82333;
-}
-
-.boton-editar:disabled,
-.boton-eliminar:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+/* Legacy: desactivar botones de colores en tablas si quedan clases antiguas */
+.tabla-acciones .boton-editar,
+.tabla-acciones .boton-eliminar {
+  display: none;
 }
 
 /* Advertencia en modal */

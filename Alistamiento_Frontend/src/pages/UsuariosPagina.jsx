@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { logger } from "../utils/logger";
 import { ModalUsuario } from "../components/ui/ModalUsuario";
 import { ModalPrograma } from "../components/ui/ModalPrograma";
@@ -13,11 +14,28 @@ import { useUsuarios } from "../hooks/useUsuarios";
 import { useProgramas } from "../hooks/useProgramas";
 import { useFichas } from "../hooks/useFichas";
 import { leerRolesAsignables } from "../services/rolService";
+import { GestionPermisosPanel } from "../components/panel/GestionPermisosPanel";
+import { ConfiguracionFasesPanel } from "../components/panel/ConfiguracionFasesPanel";
 import "./Pagina.css";
+
+const PESTANAS = [
+  { id: "instructores", label: "Instructores", icon: "fa-user", permiso: "instructor.crear" },
+  { id: "programas", label: "Programas", icon: "fa-graduation-cap", permiso: "programa.leer" },
+  { id: "fichas", label: "Fichas", icon: "fa-file-alt", permiso: "ficha.leer" },
+  { id: "permisos", label: "Gestión de Permisos", icon: "fa-shield-alt", permiso: "permiso.administrar" },
+  { id: "fases", label: "Configuración de Fases", icon: "fa-layer-group", permiso: "fase.gestionar" },
+];
 
 export const UsuariosPagina = () => {
   const { user } = useAuthContext();
+  const [searchParams] = useSearchParams();
   const puedeGestionarInstructores = tienePermiso(user, 'instructor.crear');
+
+  const pestanasVisibles = useMemo(
+    () => PESTANAS.filter((p) => tienePermiso(user, p.permiso)),
+    [user],
+  );
+
   const [seccionActiva, setSeccionActiva] = useState("instructores");
   const { usuarios, debugInfo, guardarUsuario, eliminarUsuarioPorId } = useUsuarios();
   const { programas, cargarProgramas, eliminarPrograma } = useProgramas();
@@ -41,6 +59,27 @@ export const UsuariosPagina = () => {
   const [mensajeModal, setMensajeModal] = useState('');
   const [elementoAEliminar, setElementoAEliminar] = useState(null);
   const [tipoAccion, setTipoAccion] = useState('');
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    const tabValida = tabParam && pestanasVisibles.some((p) => p.id === tabParam);
+
+    if (tabValida) {
+      setSeccionActiva(tabParam);
+      return;
+    }
+
+    setSeccionActiva((actual) => {
+      if (pestanasVisibles.some((p) => p.id === actual)) return actual;
+      return pestanasVisibles[0]?.id ?? actual;
+    });
+  }, [searchParams, pestanasVisibles]);
+
+  const cambiarSeccion = (id) => {
+    if (pestanasVisibles.some((p) => p.id === id)) {
+      setSeccionActiva(id);
+    }
+  };
 
   // Función para mostrar modal de éxito
   const mostrarExito = (mensaje) => {
@@ -247,31 +286,25 @@ export const UsuariosPagina = () => {
 
         {/* MENU DE SECCIONES CON ANIMACIÓN */}
         <div className="menu-secciones-animadas">
-          <div
-            className={`tab ${seccionActiva === "instructores" ? "activo" : ""}`}
-            onClick={() => setSeccionActiva("instructores")}
-          >
-            <i className="fas fa-user"></i>
-            <span>Instructores</span>
-          </div>
-          <div
-            className={`tab ${seccionActiva === "programas" ? "activo" : ""}`}
-            onClick={() => setSeccionActiva("programas")}
-          >
-            <i className="fas fa-graduation-cap"></i>
-            <span>Programas</span>
-          </div>
-          <div
-            className={`tab ${seccionActiva === "fichas" ? "activo" : ""}`}
-            onClick={() => setSeccionActiva("fichas")}
-          >
-            <i className="fas fa-file-alt"></i>
-            <span>Fichas</span>
-          </div>
+          {pestanasVisibles.map((pestana) => (
+            <div
+              key={pestana.id}
+              className={`tab ${seccionActiva === pestana.id ? "activo" : ""}`}
+              onClick={() => cambiarSeccion(pestana.id)}
+              role="tab"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') cambiarSeccion(pestana.id);
+              }}
+            >
+              <i className={`fas ${pestana.icon}`} aria-hidden />
+              <span>{pestana.label}</span>
+            </div>
+          ))}
         </div>
 
         {/* SECCIÓN INSTRUCTORES */}
-        {seccionActiva === "instructores" && (
+        {seccionActiva === "instructores" && puedeGestionarInstructores && (
           <>
             <div className="usuarios-header">
               <div>
@@ -335,7 +368,7 @@ export const UsuariosPagina = () => {
         )}
 
         {/* SECCIÓN PROGRAMAS */}
-        {seccionActiva === "programas" && (
+        {seccionActiva === "programas" && tienePermiso(user, 'programa.leer') && (
           <>
             <div className="usuarios-header">
               <div>
@@ -392,7 +425,7 @@ export const UsuariosPagina = () => {
         )}
 
         {/* SECCIÓN FICHAS */}
-        {seccionActiva === "fichas" && (
+        {seccionActiva === "fichas" && tienePermiso(user, 'ficha.leer') && (
           <div className="fichas-seccion">
             <div className="usuarios-header">
               <div>
@@ -461,6 +494,14 @@ export const UsuariosPagina = () => {
               />
             )}
           </div>
+        )}
+
+        {seccionActiva === "permisos" && tienePermiso(user, 'permiso.administrar') && (
+          <GestionPermisosPanel />
+        )}
+
+        {seccionActiva === "fases" && tienePermiso(user, 'fase.gestionar') && (
+          <ConfiguracionFasesPanel />
         )}
 
         {/* MODALES DE ÉXITO Y ERROR */}

@@ -1,16 +1,16 @@
 const express = require('express');
 const PermisosController = require('../controllers/permisos.controller');
-const autorizarRol = require('../middleware/autorizarRol');
+const autorizarPermiso = require('../middleware/autorizarPermiso');
 
 const router = express.Router();
 const permisosController = new PermisosController();
 
-router.use(autorizarRol('Administrador', 'Gestor'));
+const adminPermisos = autorizarPermiso('permiso.administrar');
 
-router.get('/', (req, res) => permisosController.obtenerPermisos(req, res));
-router.get('/:id', (req, res) => permisosController.obtenerPermisoPorId(req, res));
-router.post('/', (req, res) => permisosController.agregarPermiso(req, res));
-router.put('/:id', (req, res) => permisosController.actualizarPermiso(req, res));
-router.delete('/:id', (req, res) => permisosController.eliminarPermiso(req, res));
+router.get('/', adminPermisos, (req, res) => permisosController.obtenerPermisos(req, res));
+router.get('/:id', adminPermisos, (req, res) => permisosController.obtenerPermisoPorId(req, res));
+router.post('/', adminPermisos, (req, res) => permisosController.agregarPermiso(req, res));
+router.put('/:id', adminPermisos, (req, res) => permisosController.actualizarPermiso(req, res));
+router.delete('/:id', adminPermisos, (req, res) => permisosController.eliminarPermiso(req, res));
 
 module.exports = router;
