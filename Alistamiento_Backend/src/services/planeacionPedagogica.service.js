@@ -37,9 +37,12 @@ function crearReporteVacio() {
     sincronizados: 0,
     movidos: 0,
     nuevos: 0,
+    reactivados: 0,
     archivados: 0,
     archivados_con_contenido: 0,
     ids_nuevos: [],
+    ids_reactivados: [],
+    reactivados_duplicados: [],
     movidos_split: [],
   };
 }
@@ -278,6 +281,41 @@ class PlaneacionPedagogicaService {
         sabanaRow.id_trimestre,
         sabanaRow.no_trimestre,
       );
+
+      const archivados = await planeacionRepository.findArchivadosByRapAndTrimestre(
+        connection,
+        idFicha,
+        sabanaRow.id_rap,
+        sabanaRow.id_trimestre,
+      );
+
+      if (archivados.length > 0) {
+        const detalleAReactivar = archivados[0];
+        const reactivado = await planeacionRepository.reactivateDetalle(
+          connection,
+          detalleAReactivar.id_detalle,
+          idPlaneacion,
+          sabanaRow.horas_trimestre,
+        );
+
+        if (reactivado > 0) {
+          reporte.reactivados += 1;
+          reporte.ids_reactivados.push(detalleAReactivar.id_detalle);
+          detalleByKeyPostSync.set(key, { id_detalle: detalleAReactivar.id_detalle });
+
+          if (archivados.length > 1) {
+            reporte.reactivados_duplicados.push({
+              id_rap: sabanaRow.id_rap,
+              id_trimestre: sabanaRow.id_trimestre,
+              id_detalle_reactivado: detalleAReactivar.id_detalle,
+              ids_detalle_omitidos: archivados.slice(1).map((row) => row.id_detalle),
+            });
+          }
+
+          continue;
+        }
+      }
+
       const nuevoId = await planeacionRepository.insertDetalleVacioDesdeSabana(
         connection,
         idPlaneacion,

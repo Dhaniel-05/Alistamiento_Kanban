@@ -281,6 +281,38 @@ class PlaneacionRepository {
     return result.affectedRows;
   }
 
+  async findArchivadosByRapAndTrimestre(connection, idFicha, idRap, idTrimestre) {
+    const [rows] = await connection.query(
+      `SELECT
+         dpp.id_detalle,
+         dpp.id_planeacion,
+         dpp.id_rap,
+         dpp.fecha_creacion
+       FROM detalle_planeacion_pedagogica dpp
+       INNER JOIN planeacion_pedagogica pp ON pp.id_planeacion = dpp.id_planeacion
+       WHERE pp.id_ficha = ?
+         AND pp.id_trimestre = ?
+         AND dpp.id_rap = ?
+         AND dpp.activo = 0
+       ORDER BY dpp.id_detalle DESC`,
+      [idFicha, idTrimestre, idRap],
+    );
+    return rows;
+  }
+
+  async reactivateDetalle(connection, idDetalle, idPlaneacion, horasTrimestre) {
+    const [result] = await connection.query(
+      `UPDATE detalle_planeacion_pedagogica
+       SET activo = 1,
+           id_planeacion = ?,
+           horas_trimestre = ?
+       WHERE id_detalle = ?
+         AND activo = 0`,
+      [idPlaneacion, horasTrimestre, idDetalle],
+    );
+    return result.affectedRows;
+  }
+
   async findPlaneacionesByFicha(idFicha, connection = db) {
     const [rows] = await connection.query(
       `SELECT ${PLANEACION_PROJECTION},
