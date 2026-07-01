@@ -18,6 +18,7 @@ export function useSabana(idFicha, user) {
         const [fichaSeleccionada, setFichaSeleccionada] = useState(idFicha ? parseInt(idFicha) : null);
   const [sabana, setSabana] = useState(null);
   const [mapaTrimestres, setMapaTrimestres] = useState({});
+  const [mapaFasesTrimestres, setMapaFasesTrimestres] = useState({});
   const [mapaAsignaciones, setMapaAsignaciones] = useState({});
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState(null);
@@ -78,6 +79,7 @@ export function useSabana(idFicha, user) {
     } else {
       setSabana(null);
       setMapaTrimestres({});
+      setMapaFasesTrimestres({});
       setMapaAsignaciones({});
     }
   }, [fichaSeleccionada]);
@@ -261,12 +263,16 @@ export function useSabana(idFicha, user) {
         setInfoPrograma(null);
       }
 
-      // Crear mapa de trimestres
+      // Crear mapa de trimestres y fases por número de trimestre
       const mapa = {};
+      const mapaFases = {};
       if (datosTrimestres && Array.isArray(datosTrimestres)) {
         datosTrimestres.forEach((trimestre) => {
           if (trimestre.id_trimestre && trimestre.no_trimestre !== undefined) {
             mapa[trimestre.no_trimestre] = trimestre.id_trimestre;
+            if (trimestre.fase) {
+              mapaFases[trimestre.no_trimestre] = trimestre.fase;
+            }
           }
         });
       }
@@ -369,12 +375,14 @@ export function useSabana(idFicha, user) {
 
       setSabana(rapsUnicos);
       setMapaTrimestres(mapa);
+      setMapaFasesTrimestres(mapaFases);
       setMapaAsignaciones(asignaciones);
     } catch (err) {
       logger.error("❌ Error cargando sábana:", err);
       setError(`Error al cargar sábana: ${err.message}`);
       setSabana([]);
       setMapaTrimestres({});
+      setMapaFasesTrimestres({});
       setMapaAsignaciones({});
     } finally {
       setCargando(false);
@@ -606,6 +614,7 @@ export function useSabana(idFicha, user) {
     cerrarModal,
     pegarRAPEnTrimestre,
     obtenerIdTrimestre,
+    mapaFasesTrimestres,
     handleDropRAP,
     handleDesasignarRAP,
     obtenerNumeroTrimestres,

@@ -77,6 +77,25 @@ class FichasController {
     }
   }
 
+  async syncTrimestreFasesTodas(req, res, next) {
+    try {
+      const result = await fichaService.sincronizarFasesTrimestre(null);
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async syncTrimestreFasesPorFicha(req, res, next) {
+    try {
+      const idFicha = parseInt(req.params.id, 10);
+      const result = await fichaService.sincronizarFasesTrimestre(idFicha);
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async actualizarFicha(req, res) {
     const { id } = req.params;
     const {

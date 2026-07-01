@@ -4,7 +4,8 @@
  */
 
 import { useDrag } from "react-dnd";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { obtenerSiglas } from "../utils/obtenerSiglas";
 
 const TarjetaRAPSabana = ({
   rap,
@@ -75,6 +76,23 @@ const TarjetaRAPSabana = ({
   const horasTrimestre = asignacion?.horas_trimestre ?? null;
   const horasSemana = asignacion?.horas_semana ?? null;
 
+  const nombreInstructorAsignado = useMemo(() => {
+    if (asignacion?.instructor_asignado) {
+      return asignacion.instructor_asignado;
+    }
+    if (asignacion?.id_instructor && Array.isArray(instructores)) {
+      const instructor = instructores.find(
+        (item) => Number(item.id_instructor) === Number(asignacion.id_instructor),
+      );
+      return instructor?.nombre || null;
+    }
+    return null;
+  }, [asignacion, instructores]);
+
+  const siglasInstructor = nombreInstructorAsignado
+    ? obtenerSiglas(nombreInstructorAsignado)
+    : '';
+
   return (
     <div
       ref={drag}
@@ -141,24 +159,41 @@ const TarjetaRAPSabana = ({
       {asignacion?.id_rap_trimestre && (
         <div className="tarjeta-rap-instructor">
           <label className="tarjeta-rap-label">Instructor:</label>
-          <select
-            value={asignacion.id_instructor ?? ""}
-            onChange={(e) => {
-              const idInstructor = e.target.value ? parseInt(e.target.value, 10) : null;
-              onAsignarInstructor(asignacion.id_rap_trimestre, idInstructor);
-            }}
-            disabled={asignandoInstructor}
-            className="tarjeta-rap-select-instructor"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <option value=""> Sin Asignar </option>
-            {Array.isArray(instructores) &&
-              instructores.map((instructor) => (
-                <option key={instructor.id_instructor} value={instructor.id_instructor}>
-                  {instructor.nombre}
-                </option>
-              ))}
-          </select>
+          <div className="tarjeta-rap-instructor-row">
+            {siglasInstructor ? (
+              <span
+                className="instructor-avatar instructor-avatar--asignado"
+                title={nombreInstructorAsignado}
+                aria-hidden
+              >
+                {siglasInstructor}
+              </span>
+            ) : (
+              <span
+                className="instructor-avatar instructor-avatar--vacio"
+                title="Sin instructor asignado"
+                aria-hidden
+              />
+            )}
+            <select
+              value={asignacion.id_instructor ?? ""}
+              onChange={(e) => {
+                const idInstructor = e.target.value ? parseInt(e.target.value, 10) : null;
+                onAsignarInstructor(asignacion.id_rap_trimestre, idInstructor);
+              }}
+              disabled={asignandoInstructor}
+              className="tarjeta-rap-select-instructor"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <option value=""> Sin Asignar </option>
+              {Array.isArray(instructores) &&
+                instructores.map((instructor) => (
+                  <option key={instructor.id_instructor} value={instructor.id_instructor}>
+                    {instructor.nombre}
+                  </option>
+                ))}
+            </select>
+          </div>
 
           {asignandoInstructor && <div className="tarjeta-rap-cargando">Asignando...</div>}
         </div>

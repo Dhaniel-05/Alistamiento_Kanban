@@ -2,16 +2,17 @@ const express = require('express');
 const router = express.Router();
 const PdfController = require('../controllers/pdf.controller');
 const upload = require('../middleware/upload');
-const autorizarRol = require('../middleware/autorizarRol');
+const autorizarPermiso = require('../middleware/autorizarPermiso');
 const validate = require('../middleware/validate');
 const { pdfProcesarBodySchema } = require('../validators/pdf.validator');
 
 const pdfController = new PdfController();
 
-router.use(autorizarRol('Administrador', 'Gestor'));
+const puedeImportarPdf = autorizarPermiso('pdf.importar');
 
 router.post(
   '/procesar/programa',
+  puedeImportarPdf,
   upload.single('archivo'),
   upload.validatePdfMagicBytes,
   validate(pdfProcesarBodySchema, 'body'),
@@ -20,6 +21,7 @@ router.post(
 
 router.post(
   '/procesar/proyecto',
+  puedeImportarPdf,
   upload.single('archivo'),
   upload.validatePdfMagicBytes,
   validate(pdfProcesarBodySchema, 'body'),

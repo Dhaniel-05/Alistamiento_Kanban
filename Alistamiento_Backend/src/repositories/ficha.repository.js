@@ -85,6 +85,31 @@ class FichaRepository {
     return { totalTrimestres, invalidJornada: false };
   }
 
+  /**
+   * Sincroniza trimestre.fase desde ficha_fases (orden = no_trimestre).
+   * @param {import('mysql2/promise').PoolConnection} connection
+   * @param {number|null} idFicha - Si es null, actualiza todas las fichas.
+   * @returns {Promise<number>} Filas actualizadas
+   */
+  async syncTrimestreFasesFromFichaFases(connection, idFicha = null) {
+    let sql = `
+      UPDATE trimestre t
+      INNER JOIN ficha_fases ff
+        ON ff.id_ficha = t.id_ficha
+       AND ff.orden = t.no_trimestre
+      SET t.fase = ff.nombre_fase`;
+
+    const params = [];
+
+    if (idFicha != null) {
+      sql += ' WHERE t.id_ficha = ?';
+      params.push(idFicha);
+    }
+
+    const [result] = await connection.query(sql, params);
+    return result.affectedRows ?? 0;
+  }
+
   async insertInstructorFicha(connection, idInstructor, idFicha, rol) {
     await connection.query(
       'INSERT INTO instructor_ficha (id_instructor, id_ficha, rol) VALUES (?, ?, ?)',

@@ -28,6 +28,7 @@ export const PlaneacionPedagogica = () => {
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [modoEdicion, setModoEdicion] = useState(false);
   const [planeacionEnEdicion, setPlaneacionEnEdicion] = useState(null);
+  const [avisoReconciliacionEdicion, setAvisoReconciliacionEdicion] = useState(null);
   const [cargandoEdicion, setCargandoEdicion] = useState(false);
   const [exportando, setExportando] = useState(null);
   const [mostrarVista, setMostrarVista] = useState(false);
@@ -49,6 +50,7 @@ export const PlaneacionPedagogica = () => {
     cargandoFicha,
     planeacionSeleccionada,
     setPlaneacionSeleccionada,
+    reconciliacion,
     cargarPlaneaciones,
     cargarInfoFicha,
     eliminarPlaneacion,
@@ -120,6 +122,7 @@ export const PlaneacionPedagogica = () => {
     setMostrarFormulario(false);
     setModoEdicion(false);
     setPlaneacionEnEdicion(null);
+    setAvisoReconciliacionEdicion(null);
   };
 
   const handleEditarPlaneacion = async (planeacion) => {
@@ -129,6 +132,15 @@ export const PlaneacionPedagogica = () => {
     try {
       const respuesta = await planeacionService.obtenerPlaneacionPorId(idPlaneacion);
       const data = respuesta?.data ?? respuesta;
+      const reconciliacionResp = respuesta?.reconciliacion;
+
+      if (reconciliacionResp?.archivados_con_contenido > 0) {
+        setAvisoReconciliacionEdicion(
+          `Se archivaron ${reconciliacionResp.archivados_con_contenido} planeaciones de RAPs que ya no están en la sábana`,
+        );
+      } else {
+        setAvisoReconciliacionEdicion(null);
+      }
 
       if (!data?.detalles?.length) {
         throw new Error('La planeación no tiene detalles editables (falta id_detalle en el servidor)');
@@ -235,6 +247,7 @@ export const PlaneacionPedagogica = () => {
           fichaInfo={fichaInfo}
           modoEdicion={modoEdicion}
           planeacionInicial={planeacionEnEdicion}
+          avisoReconciliacion={avisoReconciliacionEdicion}
         />
       </Layout>
     );
@@ -302,6 +315,13 @@ export const PlaneacionPedagogica = () => {
             Generar planeación pedagógica
           </button>
         </div>
+
+        {reconciliacion?.archivados_con_contenido > 0 && (
+          <div className="aviso-reconciliacion" role="status">
+            Se archivaron {reconciliacion.archivados_con_contenido} planeaciones de RAPs que ya no
+            están en la sábana
+          </div>
+        )}
 
         <div className="planeaciones-list">
           {loading ? (

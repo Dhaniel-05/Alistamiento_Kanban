@@ -4,6 +4,46 @@ const logger = require('../config/logger');
 const planeacionRepository = require('../repositories/planeacion.repository');
 const { buildGfpi134Workbook } = require('./planeacionExcel.service');
 
+const PEDAGOGIC_CONTENT_FIELDS = [
+  'actividades_aprendizaje',
+  'descripcion_evidencia',
+  'materiales_formacion',
+  'saberes_conceptos',
+  'saberes_proceso',
+  'criterios_evaluacion',
+  'estrategias_didacticas',
+  'ambientes_aprendizaje',
+  'observaciones',
+];
+
+function pairKey(idRap, idTrimestre) {
+  return `${idRap}-${idTrimestre}`;
+}
+
+function detalleTieneContenidoPedagogico(detalle) {
+  for (const field of PEDAGOGIC_CONTENT_FIELDS) {
+    const value = detalle[field];
+    if (value != null && String(value).trim() !== '') {
+      return true;
+    }
+  }
+  const directa = Number(detalle.duracion_directa) || 0;
+  const independiente = Number(detalle.duracion_independiente) || 0;
+  return directa > 0 || independiente > 0;
+}
+
+function crearReporteVacio() {
+  return {
+    sincronizados: 0,
+    movidos: 0,
+    nuevos: 0,
+    archivados: 0,
+    archivados_con_contenido: 0,
+    ids_nuevos: [],
+    movidos_split: [],
+  };
+}
+
 function throwPlaneacionError(statusCode, message, code = undefined) {
   const error = new AppError(message, statusCode, true, code);
   error.responseBody = { success: false, mensaje: message };
@@ -77,6 +117,229 @@ class PlaneacionPedagogicaService {
     return row.id_trimestre;
   }
 
+  async reconciliarConSabana(idFicha, connection) {
+    const reporte = crearReporteVacio();
+
+    const sabanaRows = await planeacionRepository.findSabanaPairsByFicha(idFicha, connection);
+    let detallesActivos = await planeacionRepository.findDetallesActivosByFicha(
+      idFicha,
+      connection,
+    );
+
+    const sabanaByKey = new Map();
+    const sabanaByRap = new Map();
+
+    for (const row of sabanaRows) {
+      sabanaByKey.set(pairKey(row.id_rap, row.id_trimestre), row);
+      if (!sabanaByRap.has(row.id_rap)) {
+        sabanaByRap.set(row.id_rap, []);
+      }
+      sabanaByRap.get(row.id_rap).push(row);
+    }
+
+    for (const rows of sabanaByRap.values()) {
+      rows.sort((a, b) => a.no_trimestre - b.no_trimestre);
+    }
+
+    const buildDetalleIndex = () => {
+      const byKey = new Map();
+      const byRap = new Map();
+
+      for (const detalle of detallesActivos) {
+        byKey.set(pairKey(detalle.id_rap, detalle.id_trimestre), detalle);
+        if (!byRap.has(detalle.id_rap)) {
+          byRap.set(detalle.id_rap, []);
+        }
+        byRap.get(detalle.id_rap).push(detalle);
+      }
+
+      return { byKey, byRap };
+    };
+
+    const rapIdsConDetalle = new Set(detallesActivos.map((d) => d.id_rap));
+
+    for (const idRap of rapIdsConDetalle) {
+      const { byKey } = buildDetalleIndex();
+      const detallesRap = detallesActivos.filter((d) => d.id_rap === idRap);
+      const sabanaRap = sabanaByRap.get(idRap) ?? [];
+
+      const misplaced = detallesRap.filter(
+        (d) => !sabanaByKey.has(pairKey(idRap, d.id_trimestre)),
+      );
+
+      const missingSabanaTrimestres = sabanaRap.filter(
+        (s) => !byKey.has(pairKey(idRap, s.id_trimestre)),
+      );
+
+      if (misplaced.length === 0 || missingSabanaTrimestres.length === 0) {
+        continue;
+      }
+
+      const detalleAMover = [...misplaced].sort((a, b) => {
+        const aContent = detalleTieneContenidoPedagogico(a) ? 1 : 0;
+        const bContent = detalleTieneContenidoPedagogico(b) ? 1 : 0;
+        return bContent - aContent;
+      })[0];
+
+      const targets = [...missingSabanaTrimestres].sort(
+        (a, b) => a.no_trimestre - b.no_trimestre,
+      );
+      const primaryTarget = targets[0];
+      const idPlaneacionDestino = await planeacionRepository.findOrCreatePlaneacion(
+        connection,
+        idFicha,
+        primaryTarget.id_trimestre,
+        primaryTarget.no_trimestre,
+      );
+
+      await planeacionRepository.moveDetalleToPlaneacion(
+        connection,
+        detalleAMover.id_detalle,
+        idPlaneacionDestino,
+      );
+      await planeacionRepository.updateDetalleHorasDesdeSabana(
+        connection,
+        detalleAMover.id_detalle,
+        primaryTarget.horas_trimestre,
+      );
+
+      reporte.movidos += 1;
+
+      if (targets.length > 1) {
+        const splitInfo = {
+          id_rap: idRap,
+          id_detalle_con_contenido: detalleAMover.id_detalle,
+          trimestre_con_contenido: primaryTarget.no_trimestre,
+          trimestres_vacios: [],
+        };
+
+        for (let i = 1; i < targets.length; i += 1) {
+          const target = targets[i];
+          const idPlaneacionExtra = await planeacionRepository.findOrCreatePlaneacion(
+            connection,
+            idFicha,
+            target.id_trimestre,
+            target.no_trimestre,
+          );
+          const nuevoId = await planeacionRepository.insertDetalleVacioDesdeSabana(
+            connection,
+            idPlaneacionExtra,
+            target,
+          );
+          reporte.nuevos += 1;
+          reporte.ids_nuevos.push(nuevoId);
+          splitInfo.trimestres_vacios.push(target.no_trimestre);
+        }
+
+        reporte.movidos_split.push(splitInfo);
+      }
+
+      detallesActivos = await planeacionRepository.findDetallesActivosByFicha(
+        idFicha,
+        connection,
+      );
+    }
+
+    const { byKey: detalleByKeyFinal } = buildDetalleIndex();
+
+    for (const sabanaRow of sabanaRows) {
+      const key = pairKey(sabanaRow.id_rap, sabanaRow.id_trimestre);
+      const detalle = detalleByKeyFinal.get(key);
+
+      if (detalle) {
+        const horasActuales = Number(detalle.horas_trimestre);
+        const horasSabana = Number(sabanaRow.horas_trimestre);
+        if (horasActuales !== horasSabana) {
+          await planeacionRepository.updateDetalleHorasDesdeSabana(
+            connection,
+            detalle.id_detalle,
+            sabanaRow.horas_trimestre,
+          );
+          reporte.sincronizados += 1;
+        }
+      }
+    }
+
+    detallesActivos = await planeacionRepository.findDetallesActivosByFicha(
+      idFicha,
+      connection,
+    );
+    const { byKey: detalleByKeyPostSync } = buildDetalleIndex();
+
+    for (const sabanaRow of sabanaRows) {
+      const key = pairKey(sabanaRow.id_rap, sabanaRow.id_trimestre);
+      if (detalleByKeyPostSync.has(key)) {
+        continue;
+      }
+
+      const idPlaneacion = await planeacionRepository.findOrCreatePlaneacion(
+        connection,
+        idFicha,
+        sabanaRow.id_trimestre,
+        sabanaRow.no_trimestre,
+      );
+      const nuevoId = await planeacionRepository.insertDetalleVacioDesdeSabana(
+        connection,
+        idPlaneacion,
+        sabanaRow,
+      );
+      reporte.nuevos += 1;
+      reporte.ids_nuevos.push(nuevoId);
+      detalleByKeyPostSync.set(key, { id_detalle: nuevoId });
+    }
+
+    detallesActivos = await planeacionRepository.findDetallesActivosByFicha(
+      idFicha,
+      connection,
+    );
+    const rapsEnSabana = new Set(sabanaRows.map((r) => r.id_rap));
+
+    for (const detalle of detallesActivos) {
+      const key = pairKey(detalle.id_rap, detalle.id_trimestre);
+      const enSabanaEnEsteTrimestre = sabanaByKey.has(key);
+      const rapEnAlgunaSabana = rapsEnSabana.has(detalle.id_rap);
+
+      if (enSabanaEnEsteTrimestre) {
+        continue;
+      }
+
+      if (rapEnAlgunaSabana) {
+        const archived = await planeacionRepository.archiveDetalle(
+          connection,
+          detalle.id_detalle,
+        );
+        if (archived > 0) {
+          reporte.archivados += 1;
+          if (detalleTieneContenidoPedagogico(detalle)) {
+            reporte.archivados_con_contenido += 1;
+          }
+        }
+        continue;
+      }
+
+      const archived = await planeacionRepository.archiveDetalle(
+        connection,
+        detalle.id_detalle,
+      );
+      if (archived > 0) {
+        reporte.archivados += 1;
+        if (detalleTieneContenidoPedagogico(detalle)) {
+          reporte.archivados_con_contenido += 1;
+        }
+      }
+    }
+
+    return reporte;
+  }
+
+  _marcarDetallesNuevos(detalles, idsNuevos) {
+    const idsSet = new Set(idsNuevos);
+    return detalles.map((detalle) => ({
+      ...detalle,
+      nuevo_desde_sabana: idsSet.has(detalle.id_detalle),
+    }));
+  }
+
   async crearPlaneacion(body, user) {
     try {
       return await withTransaction(async (connection) => {
@@ -135,11 +398,18 @@ class PlaneacionPedagogicaService {
   async obtenerPorFicha(idFicha, user) {
     try {
       await this._assertAccesoFicha(user, idFicha);
-      const planeaciones = await planeacionRepository.findPlaneacionesByFicha(idFicha);
+
+      const { planeaciones, reconciliacion } = await withTransaction(async (connection) => {
+        await this._assertAccesoFicha(user, idFicha, connection);
+        const reporte = await this.reconciliarConSabana(idFicha, connection);
+        const rows = await planeacionRepository.findPlaneacionesByFicha(idFicha, connection);
+        return { planeaciones: rows, reconciliacion: reporte };
+      });
 
       return {
         success: true,
         data: planeaciones,
+        reconciliacion,
       };
     } catch (error) {
       if (error instanceof AppError) throw error;
@@ -158,7 +428,15 @@ class PlaneacionPedagogicaService {
 
       await this._assertAccesoFicha(user, planeacion.id_ficha);
 
-      const detalles = await planeacionRepository.findDetallesByPlaneacion(idPlaneacion);
+      const { detalles, reconciliacion } = await withTransaction(async (connection) => {
+        await this._assertAccesoFicha(user, planeacion.id_ficha, connection);
+        const reporte = await this.reconciliarConSabana(planeacion.id_ficha, connection);
+        const rows = await planeacionRepository.findDetallesByPlaneacion(idPlaneacion, connection);
+        return {
+          detalles: this._marcarDetallesNuevos(rows, reporte.ids_nuevos),
+          reconciliacion: reporte,
+        };
+      });
 
       return {
         success: true,
@@ -171,6 +449,7 @@ class PlaneacionPedagogicaService {
           fecha_creacion: planeacion.fecha_creacion,
           detalles,
         },
+        reconciliacion,
       };
     } catch (error) {
       if (error instanceof AppError) throw error;

@@ -90,6 +90,10 @@ class FichaFasesService {
         }
 
         const copiadas = await this.copiarPlantillaAFicha(idFicha, ficha.jornada, connection);
+        const filasSincronizadas = await fichaRepository.syncTrimestreFasesFromFichaFases(
+          connection,
+          idFicha,
+        );
         const fases = await fichaFasesRepository.findByFicha(idFicha, connection);
 
         return {
@@ -97,6 +101,7 @@ class FichaFasesService {
           id_ficha: idFicha,
           fases_nuevas: copiadas,
           total_fases: fases.length,
+          trimestres_fases_sincronizados: filasSincronizadas,
         };
       });
     } catch (error) {

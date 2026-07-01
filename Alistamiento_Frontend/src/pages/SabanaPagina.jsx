@@ -138,6 +138,7 @@ export const SabanaPagina = () => {
     cerrarModal,
     pegarRAPEnTrimestre,
     obtenerIdTrimestre,
+    mapaFasesTrimestres,
     handleDropRAP,
     handleDesasignarRAP,
     obtenerNumeroTrimestres,
@@ -259,6 +260,7 @@ export const SabanaPagina = () => {
                               key={`trimestre-${noTrimestre}`}
                               noTrimestre={noTrimestre}
                               idTrimestre={idTrimestre}
+                              nombreFase={mapaFasesTrimestres[noTrimestre]}
                               raps={rapsTrimestre}
                               onDropRAP={handleDropRAP}
                               onDesasignarRAP={handleDesasignarRAP}

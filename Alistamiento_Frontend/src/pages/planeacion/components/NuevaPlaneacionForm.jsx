@@ -9,6 +9,19 @@ import { ModalConfirmacion } from "../../../components/ui/ModalConfirmacion";
 import "./NuevaPlaneacionForm.css";
 import { obtenerInstructorPorRAP } from "../../../services/sabanaService";
 
+const buildInstructorFromDetalle = (detalle) => {
+  const nombreCompleto = detalle.instructor_responsable?.trim();
+  if (!nombreCompleto && !detalle.id_instructor) {
+    return null;
+  }
+
+  return {
+    id: detalle.id_instructor ?? null,
+    nombre: nombreCompleto || "Instructor",
+    apellido: "",
+  };
+};
+
 const mapDetalleARap = (detalle) => ({
   id: detalle.id_rap,
   id_detalle: detalle.id_detalle,
@@ -16,10 +29,11 @@ const mapDetalleARap = (detalle) => ({
   nombre: detalle.nombre_rap,
   competencia: detalle.competencia,
   horas_trimestre: detalle.horas_trimestre,
+  nuevo_desde_sabana: Boolean(detalle.nuevo_desde_sabana),
   saberes_conceptos: detalle.saberes_conceptos,
   saberes_proceso: detalle.saberes_proceso,
   criterios_evaluacion: detalle.criterios_evaluacion,
-  instructor: null,
+  instructor: buildInstructorFromDetalle(detalle),
   datos: {
     fechaElaboracion: new Date().toISOString().split("T")[0],
     actividadesAprendizaje: detalle.actividades_aprendizaje || "",
@@ -52,6 +66,7 @@ export const NuevaPlaneacionForm = ({
   fichaInfo,
   modoEdicion = false,
   planeacionInicial = null,
+  avisoReconciliacion = null,
 }) => {
   const [trimestreSeleccionado, setTrimestreSeleccionado] = useState("");
   const [rapsAgregados, setRapsAgregados] = useState([]);
@@ -676,6 +691,11 @@ export const NuevaPlaneacionForm = ({
 
       {/* CONTENEDOR DEL FORMULARIO */}
       <div className="form-content">
+        {avisoReconciliacion && (
+          <div className="aviso-reconciliacion" role="status">
+            {avisoReconciliacion}
+          </div>
+        )}
         {/* SECCIÓN 1: CONFIGURACIÓN INICIAL */}
         <section className="configuracion-section">
           <div className="section-header-inline">
@@ -790,7 +810,14 @@ export const NuevaPlaneacionForm = ({
                     <div key={rap.id} className={`rap-item-header ${tieneErrores ? "con-errores" : ""}`}>
                       <span className="rap-info">
                         {rap.codigo} - {rap.nombre}
-                        {rap.horas_trimestre && <span className="rap-horas"> ({rap.horas_trimestre}h)</span>}
+                        {rap.horas_trimestre != null && (
+                          <span className="rap-horas"> ({rap.horas_trimestre}h)</span>
+                        )}
+                        {rap.nuevo_desde_sabana && (
+                          <span className="rap-nuevo-sabana-badge" title="RAP agregado desde la sábana">
+                            Nuevo desde la sábana
+                          </span>
+                        )}
                         {rap.instructor ? (
                           <span
                             className="rap-instructor-badge"
@@ -948,8 +975,13 @@ export const NuevaPlaneacionForm = ({
                 <div className="rap-header-content">
                   <h3 className="rap-form-titulo">
                     {rap.codigo} - {rap.nombre}
-                    {rap.horas_trimestre && (
+                    {rap.horas_trimestre != null && (
                       <span className="rap-horas-header"> ({rap.horas_trimestre} horas totales)</span>
+                    )}
+                    {rap.nuevo_desde_sabana && (
+                      <span className="rap-nuevo-sabana-badge" title="RAP agregado desde la sábana">
+                        Nuevo desde la sábana
+                      </span>
                     )}
                   </h3>
                   {tieneErrores && (

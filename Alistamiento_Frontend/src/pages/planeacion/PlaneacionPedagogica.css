@@ -6,6 +6,16 @@
   padding: 0 24px;
 }
 
+.aviso-reconciliacion {
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  background: #fffbeb;
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  color: #92400e;
+  font-size: 0.875rem;
+}
+
 /* HEADER CON NAVEGACIÓN */
 .planeacion-header-nav {
   display: flex;

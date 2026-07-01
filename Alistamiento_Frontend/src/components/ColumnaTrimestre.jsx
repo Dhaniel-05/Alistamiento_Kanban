@@ -11,6 +11,7 @@ import TarjetaRAPSabana from "./TarjetaRAPSabana";
 const ColumnaTrimestre = ({
   noTrimestre,
   idTrimestre,
+  nombreFase,
   raps = [],
   onDropRAP,
   onClickRAP, // Nueva prop para manejar clics en RAPs
@@ -104,6 +105,9 @@ const ColumnaTrimestre = ({
       {/* Encabezado de la columna */}
       <div className="columna-trimestre-header">
         <h3 className="columna-trimestre-titulo">Trimestre {noTrimestre}</h3>
+        {nombreFase && (
+          <p className="columna-trimestre-fase">{nombreFase}</p>
+        )}
         <div className="columna-trimestre-info">
           <span className="columna-trimestre-contador">
             {raps.length} RAP{raps.length !== 1 ? "s" : ""}

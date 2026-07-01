@@ -16,6 +16,7 @@ export function usePlaneacionPedagogica(idFicha, { autoLoad = true } = {}) {
   const [fichaInfo, setFichaInfo] = useState(null);
   const [cargandoFicha, setCargandoFicha] = useState(false);
   const [planeacionSeleccionada, setPlaneacionSeleccionada] = useState(null);
+  const [reconciliacion, setReconciliacion] = useState(null);
 
   const cargarInfoFicha = useCallback(async (fichaId) => {
     if (!fichaId) {
@@ -141,6 +142,9 @@ export function usePlaneacionPedagogica(idFicha, { autoLoad = true } = {}) {
 
       if (datos && datos.data) {
         setPlaneaciones(datos.data);
+        if (datos.reconciliacion) {
+          setReconciliacion(datos.reconciliacion);
+        }
       } else if (Array.isArray(datos)) {
         setPlaneaciones(datos);
       } else if (datos && Array.isArray(datos.planeaciones)) {
@@ -234,6 +238,8 @@ export function usePlaneacionPedagogica(idFicha, { autoLoad = true } = {}) {
     cargandoFicha,
     planeacionSeleccionada,
     setPlaneacionSeleccionada,
+    reconciliacion,
+    setReconciliacion,
     cargarPlaneaciones,
     cargarInfoFicha,
     verPlaneacion,

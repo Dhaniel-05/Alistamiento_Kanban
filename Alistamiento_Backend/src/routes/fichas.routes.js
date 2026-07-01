@@ -34,6 +34,11 @@ router.patch(
   validate(cambiarEstadoFaseBodySchema, 'body'),
   (req, res, next) => fichaFasesController.cambiarEstado(req, res, next),
 );
+router.post(
+  '/trimestres/sync-fases',
+  autorizarPermiso('fase.gestionar'),
+  (req, res, next) => fichasController.syncTrimestreFasesTodas(req, res, next),
+);
 router.get(
   '/todas',
   autorizarPermiso('ficha.leer'),
@@ -67,6 +72,12 @@ router.post(
   autorizarPermiso('ficha.crear'),
   validate(fichaBodySchema, 'body'),
   (req, res, next) => fichasController.agregarFichas(req, res, next),
+);
+router.post(
+  '/:id/trimestres/sync-fases',
+  autorizarPermiso('fase.gestionar'),
+  validate(idParamSchema, 'params'),
+  (req, res, next) => fichasController.syncTrimestreFasesPorFicha(req, res, next),
 );
 router.delete(
   '/:id',

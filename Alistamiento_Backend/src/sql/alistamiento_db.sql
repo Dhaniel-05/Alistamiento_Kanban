@@ -283,6 +283,7 @@ CREATE TABLE detalle_planeacion_pedagogica (
     id_detalle INT AUTO_INCREMENT PRIMARY KEY,
     id_planeacion INT NOT NULL,
     id_rap INT NOT NULL,
+    activo TINYINT(1) DEFAULT 1,
     codigo_rap VARCHAR(20),
     nombre_rap TEXT,
     competencia TEXT,
