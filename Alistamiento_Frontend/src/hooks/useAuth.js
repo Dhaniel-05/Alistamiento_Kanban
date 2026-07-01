@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { loginRequest, fetchSessionMe } from "../services/authService";
 import { logger } from "../utils/logger";
 
-const PERMISOS_REFRESH_MS = 30_000;
+const FOCUS_THROTTLE_MS = 60_000;
 
 const mergeUserSession = (prev, instructor) => {
   if (!instructor) return prev;
@@ -20,6 +20,8 @@ const mergeUserSession = (prev, instructor) => {
 export const useAuth = () => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("token") || null);
+  const lastFocusRefreshAtRef = useRef(0);
+  const isRefreshingRef = useRef(false);
 
   const persistUser = useCallback((nextUser) => {
     if (!nextUser) return;
@@ -29,7 +31,9 @@ export const useAuth = () => {
 
   const refreshPermissions = useCallback(async () => {
     const activeToken = token || localStorage.getItem("token");
-    if (!activeToken) return;
+    if (!activeToken || isRefreshingRef.current) return;
+
+    isRefreshingRef.current = true;
 
     try {
       const data = await fetchSessionMe();
@@ -42,8 +46,19 @@ export const useAuth = () => {
       });
     } catch (error) {
       logger.warn("No se pudieron refrescar permisos; se mantiene cache local", error.message);
+    } finally {
+      isRefreshingRef.current = false;
     }
   }, [token]);
+
+  const refreshPermissionsOnFocus = useCallback(() => {
+    const now = Date.now();
+    if (now - lastFocusRefreshAtRef.current < FOCUS_THROTTLE_MS) {
+      return;
+    }
+    lastFocusRefreshAtRef.current = now;
+    refreshPermissions();
+  }, [refreshPermissions]);
 
   useEffect(() => {
     if (token && !user) {
@@ -65,15 +80,12 @@ export const useAuth = () => {
 
     refreshPermissions();
 
-    const intervalId = setInterval(refreshPermissions, PERMISOS_REFRESH_MS);
-    const onFocus = () => refreshPermissions();
-    window.addEventListener("focus", onFocus);
+    window.addEventListener("focus", refreshPermissionsOnFocus);
 
     return () => {
-      clearInterval(intervalId);
-      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("focus", refreshPermissionsOnFocus);
     };
-  }, [token, refreshPermissions]);
+  }, [token, refreshPermissions, refreshPermissionsOnFocus]);
 
   const login = async (email, password) => {
     try {
@@ -99,6 +111,9 @@ export const useAuth = () => {
 
       return true;
     } catch (error) {
+      if (error.code === 'RATE_LIMIT') {
+        throw error;
+      }
       logger.error("Login fallido", error.message);
       return false;
     }

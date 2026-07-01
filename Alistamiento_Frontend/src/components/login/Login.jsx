@@ -10,6 +10,14 @@ import { CambioContrasenaModal } from "../ui/ModalCambioContraseña";
 import { ModalError } from "../ui/ModalError";
 import { logger } from "../../utils/logger";
 
+const DEFAULT_RATE_LIMIT_SECONDS = 120;
+
+const formatCountdown = (totalSeconds) => {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+};
+
 export const Login = () => {
   const { login, user } = useAuthContext();
 
@@ -20,12 +28,39 @@ export const Login = () => {
   const [loading, setLoading] = useState(false);
   const [mostrarModalError, setMostrarModalError] = useState(false);
   const [mensajeError, setMensajeError] = useState('');
+  const [rateLimitSeconds, setRateLimitSeconds] = useState(0);
+  const [rateLimitMensaje, setRateLimitMensaje] = useState('');
   
   // Nuevo estado para controlar si ya procesamos el login
   const [procesandoLogin, setProcesandoLogin] = useState(false);
 
   const navigate = useNavigate();
   const hasHandledUser = useRef(false);
+
+  const loginBloqueado = rateLimitSeconds > 0;
+
+  useEffect(() => {
+    if (rateLimitSeconds <= 0) return undefined;
+
+    const timerId = setTimeout(() => {
+      setRateLimitSeconds((prev) => Math.max(0, prev - 1));
+    }, 1000);
+
+    return () => clearTimeout(timerId);
+  }, [rateLimitSeconds]);
+
+  useEffect(() => {
+    if (rateLimitSeconds === 0) {
+      setRateLimitMensaje('');
+    }
+  }, [rateLimitSeconds]);
+
+  const activarBloqueoRateLimit = (retryAfter, mensaje) => {
+    setRateLimitSeconds(retryAfter > 0 ? retryAfter : DEFAULT_RATE_LIMIT_SECONDS);
+    setRateLimitMensaje(
+      mensaje || 'Demasiados intentos. Intenta de nuevo en unos minutos.',
+    );
+  };
 
   // Función para mostrar modal de error
   const mostrarError = (mensaje) => {
@@ -107,7 +142,7 @@ export const Login = () => {
   // === MANEJO DEL LOGIN ===
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (loading) return;
+    if (loading || loginBloqueado) return;
 
     const emailNormalizado = normalizarEmail(email);
 
@@ -155,6 +190,12 @@ export const Login = () => {
       setProcesandoLogin(true);
 
     } catch (error) {
+      if (error.code === 'RATE_LIMIT') {
+        activarBloqueoRateLimit(error.retryAfter, error.message);
+        setLoading(false);
+        return;
+      }
+
       logger.error("Error en formulario de login", error.message);
       mostrarError("Error al iniciar sesión: " + error.message);
       setLoading(false);
@@ -190,6 +231,15 @@ export const Login = () => {
         <p className="login-subtitle">
           Ingresa tus credenciales para acceder al sistema
         </p>
+
+        {loginBloqueado && (
+          <div className="login-rate-limit-banner" role="alert" aria-live="polite">
+            <p className="login-rate-limit-title">{rateLimitMensaje}</p>
+            <p className="login-rate-limit-countdown">
+              Intenta de nuevo en <strong>{formatCountdown(rateLimitSeconds)}</strong>
+            </p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
@@ -230,8 +280,12 @@ export const Login = () => {
             </div>
           </div>
 
-          <button type="submit" className="login-btn" disabled={loading}>
-            {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
+          <button type="submit" className="login-btn" disabled={loading || loginBloqueado}>
+            {loading
+              ? "Iniciando sesión..."
+              : loginBloqueado
+                ? `Intenta de nuevo en ${formatCountdown(rateLimitSeconds)}`
+                : "Iniciar Sesión"}
           </button>
         </form>
       </div>

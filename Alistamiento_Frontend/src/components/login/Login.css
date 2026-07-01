@@ -38,6 +38,32 @@ h2 {
   margin-bottom: 1.8rem;
 }
 
+.login-rate-limit-banner {
+  margin: -0.8rem 0 1.2rem;
+  padding: 12px 14px;
+  background: #fffbeb;
+  border: 1px solid #f59e0b;
+  border-radius: 10px;
+  text-align: left;
+}
+
+.login-rate-limit-title {
+  margin: 0 0 6px;
+  font-size: 0.85rem;
+  color: #92400e;
+  line-height: 1.4;
+}
+
+.login-rate-limit-countdown {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #78350f;
+}
+
+.login-rate-limit-countdown strong {
+  font-variant-numeric: tabular-nums;
+}
+
 /* Campos de formulario */
 .form-group {
   text-align: left;
