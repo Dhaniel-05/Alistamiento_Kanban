@@ -6,13 +6,13 @@ const enviarCredenciales = async (correo, nombre, contrasena) => {
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: 'juanpaz1085@gmail.com',
-        pass: 'lbrf zltz demk hfkn',
+        user: 'dhanymarth@gmail.com',
+        pass: 'jrcw dlsh kujj wjrw',
       },
     });
 
     await transporter.sendMail({
-      from: '"NodoRap" <juanpaz1085@gmail.com@gmail.com>',
+      from: '"NodoRap" <dhanymarth@gmail.com>',
       to: correo,
       subject: 'Tus Credenciales para NodoRap',
       html: `
