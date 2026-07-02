@@ -1,6 +1,43 @@
 CREATE DATABASE alistamiento_db;
 USE alistamiento_db;
 
+CREATE TABLE negocio (
+    id_negocio INT AUTO_INCREMENT PRIMARY KEY,
+    razon_social VARCHAR(100),
+    logo LONGBLOB,
+    descripcion TEXT,
+    telefono VARCHAR(20),
+    email VARCHAR(100),
+    direccion VARCHAR(255),
+    redes_sociales VARCHAR(255), -- {facebook: "url", instagram: "url", etc}
+    fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Tabla para códigos de verificación temporales
+CREATE TABLE codigos_verificacion (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255),
+    codigo VARCHAR(6),
+    token VARCHAR(255) NULL,
+    usado BOOLEAN DEFAULT FALSE,
+    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE carrusel_banner (
+    id_promocion INT NOT NULL AUTO_INCREMENT primary key,
+    titulo VARCHAR(150) NOT NULL,
+    descripcion TEXT,
+    imagen LONGBLOB,
+    fecha_inicio DATE,
+    fecha_fin DATE,
+    posicion_texto VARCHAR(50) DEFAULT 'centro',
+    estado ENUM('activa', 'inactiva') DEFAULT 'activa',
+    id_usuario INT,
+    foreign key (id_usuario) references usuarios(id_usuario)
+);
+
+-- Tablas del sistema de usuarios
+
 CREATE TABLE permisos (
     id_permiso INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL UNIQUE,   -- clave de máquina: 'ficha.crear'

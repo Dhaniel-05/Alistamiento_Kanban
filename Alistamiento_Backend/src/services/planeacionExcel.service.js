@@ -1,5 +1,6 @@
 const ExcelJS = require('exceljs');
 const { sanitizeExcelCell } = require('../utils/excelSanitize');
+const { calcularHoras } = require('./horas.service');
 
 const COLUMN_WIDTHS = {
   A: 28,
@@ -20,8 +21,29 @@ const COLUMN_WIDTHS = {
   P: 45,
 };
 
+const EXCEL_DATE_FORMAT = 'yyyy-mm-dd';
+
 function setCell(ws, address, value) {
   ws.getCell(address).value = sanitizeExcelCell(value);
+}
+
+function parseExcelDate(value) {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value;
+  }
+  if (value != null) {
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed;
+    }
+  }
+  return new Date();
+}
+
+function setDateCell(ws, address, value) {
+  const celda = ws.getCell(address);
+  celda.value = parseExcelDate(value);
+  celda.numFmt = EXCEL_DATE_FORMAT;
 }
 
 function mergeTitleRow(ws, row, colStart, colEnd, value) {
@@ -51,14 +73,13 @@ async function buildGfpi134Workbook({ rows, metadata, integrantes, idFicha }) {
 
   const meta = metadata ?? {};
   const primeraFila = rows[0] ?? {};
-  const fechaElaboracion = primeraFila.fecha_creacion ?? new Date();
 
   const integrantesTexto = integrantes
     .map((item) => `${item.nombre}${item.rol ? ` (${item.rol})` : ''}`)
     .join(', ');
 
   setCell(ws, 'A5', 'Fecha de Elaboración:');
-  setCell(ws, 'B5', fechaElaboracion);
+  setDateCell(ws, 'B5', primeraFila.fecha_creacion);
   setCell(ws, 'A6', 'Denominación del Programa:');
   setCell(ws, 'B6', meta.nombre_programa ?? primeraFila.nombre_programa ?? '');
   setCell(ws, 'A7', 'Modalidad:');
@@ -78,7 +99,8 @@ async function buildGfpi134Workbook({ rows, metadata, integrantes, idFicha }) {
   setCell(ws, 'A10', 'Integrantes del equipo:');
   setCell(ws, 'B10', integrantesTexto);
   setCell(ws, 'A11', 'Ficha:');
-  setCell(ws, 'B11', idFicha);
+  const codigoFicha = meta.codigo_ficha ?? primeraFila.codigo_ficha ?? idFicha;
+  setCell(ws, 'B11', codigoFicha);
 
   const headerRow1 = 16;
   const headerRow2 = 17;
@@ -123,8 +145,9 @@ async function buildGfpi134Workbook({ rows, metadata, integrantes, idFicha }) {
     setCell(ws, `F${dataRow}`, row.saberes_proceso ?? '');
     setCell(ws, `G${dataRow}`, row.criterios_evaluacion ?? '');
     setCell(ws, `H${dataRow}`, row.actividades_aprendizaje ?? '');
-    setCell(ws, `I${dataRow}`, row.duracion_directa ?? '');
-    setCell(ws, `J${dataRow}`, row.duracion_independiente ?? '');
+    const { directa, independiente } = calcularHoras(row.horas_trimestre);
+    setCell(ws, `I${dataRow}`, directa);
+    setCell(ws, `J${dataRow}`, independiente);
     setCell(ws, `K${dataRow}`, row.descripcion_evidencia ?? '');
     setCell(ws, `L${dataRow}`, row.estrategias_didacticas ?? '');
     setCell(ws, `M${dataRow}`, row.ambientes_aprendizaje ?? '');

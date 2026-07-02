@@ -43,6 +43,7 @@ app.use(helmet());
 app.use(cors({
   origin: config.corsOrigins,
   credentials: true,
+  exposedHeaders: ['Content-Disposition'],
 }));
 
 app.use('/api/planeaciones', jsonPlaneaciones);

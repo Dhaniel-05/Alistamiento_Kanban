@@ -3,6 +3,7 @@ const AppError = require('../utils/AppError');
 const logger = require('../config/logger');
 const planeacionRepository = require('../repositories/planeacion.repository');
 const { buildGfpi134Workbook } = require('./planeacionExcel.service');
+const { calcularHoras } = require('./horas.service');
 
 const PEDAGOGIC_CONTENT_FIELDS = [
   'actividades_aprendizaje',
@@ -18,6 +19,15 @@ const PEDAGOGIC_CONTENT_FIELDS = [
 
 function pairKey(idRap, idTrimestre) {
   return `${idRap}-${idTrimestre}`;
+}
+
+function enriquecerDetalleConHorasDerivadas(detalle) {
+  const { directa, independiente } = calcularHoras(detalle.horas_trimestre);
+  return {
+    ...detalle,
+    duracion_directa: directa,
+    duracion_independiente: independiente,
+  };
 }
 
 function detalleTieneContenidoPedagogico(detalle) {
@@ -54,6 +64,11 @@ function throwPlaneacionError(statusCode, message, code = undefined) {
     error.responseBody.code = code;
   }
   throw error;
+}
+
+function sanitizeExportFilenamePart(value) {
+  const s = String(value ?? '').replace(/[^\w-]/g, '');
+  return s.length > 0 ? s : null;
 }
 
 async function withTransaction(operation) {
@@ -470,8 +485,9 @@ class PlaneacionPedagogicaService {
         await this._assertAccesoFicha(user, planeacion.id_ficha, connection);
         const reporte = await this.reconciliarConSabana(planeacion.id_ficha, connection);
         const rows = await planeacionRepository.findDetallesByPlaneacion(idPlaneacion, connection);
+        const detallesMarcados = this._marcarDetallesNuevos(rows, reporte.ids_nuevos);
         return {
-          detalles: this._marcarDetallesNuevos(rows, reporte.ids_nuevos),
+          detalles: detallesMarcados.map(enriquecerDetalleConHorasDerivadas),
           reconciliacion: reporte,
         };
       });
@@ -618,9 +634,12 @@ class PlaneacionPedagogicaService {
         idFicha,
       });
 
+      const codigoFicha = metadata?.codigo_ficha ?? rows[0]?.codigo_ficha;
+      const codigoSanitizado = sanitizeExportFilenamePart(codigoFicha) ?? String(idFicha);
+
       return {
         buffer,
-        filename: `Planeacion_Ficha_${idFicha}.xlsx`,
+        filename: `Planeacion_Ficha_${codigoSanitizado}.xlsx`,
       };
     } catch (error) {
       if (error instanceof AppError) throw error;
